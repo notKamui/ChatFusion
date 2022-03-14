@@ -10,26 +10,25 @@ Summary
     The ChatFusion Protocol is aimed at standardizing message and file
     sharing over a set of servers.
     This document serves to explain and describe said protocol, its
-    types of packets, and their transmitions over the servers.
+    types of packets, and their transfer over the servers.
 
 1. Purpose
 
     This RFC specifies the standards of the CFP (ChatFusion Protocol).
     The goal of CFP is to be able to have users communicate through
-    permanent channels represented as servers, such that every users on
-    may receive messages from one individual user.
+    permanent channels represented as servers, such that every users may
+    receive messages from one individual user.
     One such user must be able to contact another one individually,
     providing a username and a server name. One should be able to send
     and receive files.
-    Furthermore, multiple servers must be able to "fusion", meaning that
+    Furthermore, multiple servers must be able to "fuse", meaning that
     if they do so, they must share their userbase and be able to
     communicate.
 
 2. Overview
 
     Message sharing must always be done with UTF-8 encoding. File
-    sharing must always be done bytewise, with a given header code to
-    specify the file type.
+    sharing must always be done bytewise, with a specified file type.
 
     While the details of the CFP header will be described later in the 
     document, it is to be noted that any text based value must always be
@@ -41,8 +40,11 @@ Summary
 
     The CFP header always starts with a byte representing the type of
     packet, thus being an OpCode. The different OpCodes will be
-    described in further details throuhout the document, with a table
-    at the end to summrize them.
+    described in further details throughout the document, with a table
+    at the end to summarize them.
+
+    We will be talking about "fusions" as "networks", and "servers
+    connected on the same network" as "sibilings".
 
 3. Connection and authentication
 
@@ -71,7 +73,7 @@ Summary
          --------------------------------------------------
 
         The server will then send back a packet containing the OpCode
-        "AUTH_OK" (0x01) if the connection is accepted, or "AUTH_KO"
+        "AUTHOK" (0x01) if the connection is accepted, or "AUTHKO"
         (0x02) if the connection is refused (If the either the
         credentials are invalid or the received packet is malformed).
         If the connection is accepted, the TCP connection will persist, 
@@ -90,7 +92,7 @@ Summary
          ----------------------------
 
         The server will then send back a packet containing the OpCode
-        "TEMP_OK" (0x04) if the connection is accepted, or "TEMP_KO"
+        "TEMPOK" (0x04) if the connection is accepted, or "TEMPKO"
         (0x05) if the connection is refused (If the either the
         credentials are invalid or the received packet is malformed).
         If the connection is accepted, the TCP connection will persist, 
@@ -262,9 +264,81 @@ Summary
     | 0x32 |  PRIVFILERESP packet |
      -----------------------------
 
-    Once a client received the total file size, it can then reconstruct 
-    it, along with its type.
+    Once a server receives a PRIVFILEFWD packet, it must send the 
+    content of it to the corresponding client.
 
+7. Fusion request
+
+    As said previously, servers can fusion with others recursively ;
+    that is to say that if a server A is fusionned with a server B, and
+    a server C is fusionned with a server D, then if B fusions with C,
+    the whole fusion network will be grouping all four together.
+
+    The packets will be built upon a simple construct representing
+    each servers information : a four 1 byte integers representing the
+    IPv4 address, followed by a 2 bytes integer representing the port
+    number.
+
+         4 bytes    2 bytes
+     -----------------------
+    | IPv4 address |  port  |  <== server info
+     -----------------------
+
+    A server can request to fusion with another server by sending a
+    packet containing the OpCode "FUSIONREQ" (0x40) followed by its
+    server information, followed by a 4 bytes integer representing the
+    number of sibiling servers it already has, followed by the server
+    information of each of them.
+
+     1 byte      6 bytes          ...
+     ---------------------------
+    | 0x40 |  self server info  | ...
+     ---------------------------
+
+    ...   4 bytes     6 bytes       ...      6 bytes
+         -----------------------------------------------
+    ... |  n_sib  | server info 1 | ... | server info n |
+         -----------------------------------------------
+
+    Once a server has received a FUSIONREQ packet, it will either send 
+    back a response packet containing the OpCode "FUSIONKO" (0x43) if 
+    the fusion has been refused (in case the received packet was 
+    malformed), or a packet containing the OpCode "FUSIONRESP" (0x41), 
+    followed its server information, followed by a 4 bytes integer 
+    representing the number of sibiling servers it already has, followed
+    by the server information of each of them.
+
+     1 byte      6 bytes          ...
+     ---------------------------
+    | 0x41 |  self server info  | ...
+     ---------------------------
+
+    ...   4 bytes     6 bytes       ...      6 bytes
+         -----------------------------------------------
+    ... |  n_sib  | server info 1 | ... | server info n |
+         -----------------------------------------------
+
+    Moreover, it must send a packet to each of its sibilings, prepended 
+    by the OpCode "FUSIONFWD" (0x42), followed by the previously
+    received FUSIONREQ packet (the one sent by the first server).
+
+      1 byte       x bytes
+     --------------------------
+    | 0x42 |  FUSIONREQ packet |
+     --------------------------
+
+    Once a server has received a FUSIONRESP packet, it will send a
+    packet to each of its sibilings, prepended by the OpCode
+    "FUSIONFWD" (0x42), followed by the received FUSIONRESP packet.
+
+      1 byte       x bytes
+     ---------------------------
+    | 0x42 |  FUSIONRESP packet |
+     ---------------------------
+
+    Once a server receives a FUSIONFWD packet, it may trucate the first
+    byte, and then act arcordingly (must not re-forward any packet).
+    
 
 APPENDIX
 
@@ -274,13 +348,13 @@ OpCodes
 
     Connection in Authentication mode
         AUTH : 0x00
-        AUTH_OK : 0x01
-        AUTH_KO : 0x02
+        AUTHOK : 0x01
+        AUTHKO : 0x02
 
     Connection in Temporary mode
         TEMP : 0x03
-        TEMP_OK : 0x04
-        TEMP_KO : 0x05
+        TEMPOK : 0x04
+        TEMPKO : 0x05
 
     Public messages
         MSG : 0x10
@@ -296,3 +370,9 @@ OpCodes
         PRIVFILE : 0x30
         PRIVFILERESP : 0x31
         PRIVFILEFWD : 0x32
+
+    Fusion
+        FUSIONREQ : 0x40
+        FUSIONRESP : 0x41
+        FUSIONFWD : 0x42
+        FUSIONKO : 0x43
