@@ -7,374 +7,377 @@ Request For Comments: ????                                  M.A.H Najjar
 
 Summary
 
-    The ChatFusion Protocol is aimed at standardizing message and file
-    sharing over a set of servers.
-    This document serves to explain and describe said protocol, its
-    types of packets, and their transfer over the servers.
+   The ChatFusion Protocol is aimed at standardizing message and file
+   sharing over a set of servers.
+   This document serves to explain and describe said protocol, its
+   types of packets, and their transfer over the servers.
 
 1. Purpose
 
-    This RFC specifies the standards of the CFP (ChatFusion Protocol).
-    The goal of CFP is to be able to have users communicate through
-    permanent channels represented as servers, such that every users may
-    receive messages from one individual user.
-    One such user must be able to contact another one individually,
-    providing a username and a server name. One should be able to send
-    and receive files.
-    Furthermore, multiple servers must be able to "fuse", meaning that
-    if they do so, they must share their userbase and be able to
-    communicate.
+   This RFC specifies the standards of the CFP (ChatFusion Protocol).
+   The goal of CFP is to be able to have users communicate through
+   permanent channels represented as servers, such that every users may
+   receive messages from one individual user.
+   One such user must be able to contact another one individually,
+   providing a username and a server name. One should be able to send
+   and receive files.
+   Furthermore, multiple servers must be able to "fuse", meaning that
+   if they do so, they must share their userbase and be able to
+   communicate.
 
 2. Overview
 
-    Message sharing must always be done with UTF-8 encoding. File
-    sharing must always be done bytewise, with a specified file type.
+   Message sharing must always be done with UTF-8 encoding. File
+   sharing must always be done bytewise, with a specified file type.
 
-    While the details of the CFP header will be described later in the 
-    document, it is to be noted that any text based value must always be
-    encoded in ASCII (US Standard ASCII).
+   While the details of the CFP header will be described later in the 
+   document, it is to be noted that any text based value must always be
+   encoded in ASCII (US Standard ASCII).
 
-    The CFP protocol is based on the TCP protocol, and thus, a CFP
-    connection is a TCP connection, a CFP packet is preceded by a TCP
-    header.
+   The CFP protocol is based on the TCP protocol, and thus, a CFP
+   connection is a TCP connection, a CFP packet is preceded by a TCP
+   header.
 
-    The CFP header always starts with a byte representing the type of
-    packet, thus being an OpCode. The different OpCodes will be
-    described in further details throughout the document, with a table
-    at the end to summarize them.
+   The CFP header always starts with a byte representing the type of
+   packet, thus being an OpCode. The different OpCodes will be
+   described in further details throughout the document, with a table
+   at the end to summarize them.
 
-    We will be talking about "fusions" as "networks", and "servers
-    connected on the same network" as "sibilings".
+   Each server has a 5 non-zero characters name (in ASCII, so 5 bytes),
+   which is used to identify it. A server cannot change its name once 
+   started.
 
-    Every single integer must be in Big Endian format.
+   We will be talking about "fusions" as "networks", and "servers
+   connected on the same network" as "sibilings".
+
+   Every single integer must be in Big Endian format.
 
 3. Connection and authentication
 
-    For a client to be able to connect to a server, it must first be
-    sure that the server is willing to accept the client, that is to say
-    that the server must be able to authenticate the client, and
-    therefore be in posession of the credentials of the user using said
-    client, and all other.
+   For a client to be able to connect to a server, it must first be
+   sure that the server is willing to accept the client, that is to say
+   that the server must be able to authenticate the client, and
+   therefore be in posession of the credentials of the user using said
+   client, and all other.
 
-    A user may be able to connect to a server thanks to a unique
-    username and a password, OR only a unique username, in "temporary
-    mode".
+   A user may be able to connect to a server thanks to a unique
+   username and a password, OR only a unique username, in "temporary
+   mode".
 
-    a. Authentication mode
+   a. Authentication mode
 
-        To ask for a connection in "auth mode", the client must send
-        to the server a packet containing the OpCode "AUTH" (0x00)
-        followed by a 4 bytes integer representing the length of the
-        username encoded in ASCII, followed by the username, followed 
-        by a 4 bytes integer representing the length of the password 
-        encoded in ASCII, followed by the password.
+      To ask for a connection in "auth mode", the client must send
+      to the server a packet containing the OpCode "AUTH" (0x00)
+      followed by a 4 bytes integer representing the length of the
+      username encoded in ASCII, followed by the username, followed 
+      by a 4 bytes integer representing the length of the password 
+      encoded in ASCII, followed by the password.
 
-         1 byte  4 bytes    n bytes    4 bytes     m bytes
-         --------------------------------------------------
-        | 0x00 |  size n  | username |  size m  | password |
-         --------------------------------------------------
+       1 byte  4 bytes    n bytes    4 bytes     m bytes
+       --------------------------------------------------
+      | 0x00 |  size n  | username |  size m  | password |
+       --------------------------------------------------
 
-        The server will then send back a packet containing the OpCode
-        "AUTHOK" (0x01) if the connection is accepted, or "AUTHKO"
-        (0x02) if the connection is refused (If the either the
-        credentials are invalid or the received packet is malformed).
-        If the connection is accepted, the TCP connection will persist, 
-        but if it is refused, the TCP connection will then be closed.
+      The server will then send back a packet containing the OpCode
+      "AUTHOK" (0x01) if the connection is accepted, or "AUTHKO"
+      (0x02) if the connection is refused (If the either the
+      credentials are invalid or the received packet is malformed).
+      If the connection is accepted, the TCP connection will persist, 
+      but if it is refused, the TCP connection will then be closed.
 
-    b. Temporary mode
+   b. Temporary mode
 
-        To ask for a connection in "temporary mode", the client must
-        send to the server a packet containing the OpCode "TEMP" (0x03)
-        followed by a 4 bytes integer representing the length of the
-        username encoded in ASCII, followed by the username.
+      To ask for a connection in "temporary mode", the client must
+      send to the server a packet containing the OpCode "TEMP" (0x03)
+      followed by a 4 bytes integer representing the length of the
+      username encoded in ASCII, followed by the username.
 
-         1 byte  4 bytes    n bytes
-         ----------------------------
-        | 0x03 |  size n  | username |
-         ----------------------------
+       1 byte  4 bytes    n bytes
+       ----------------------------
+      | 0x03 |  size n  | username |
+       ----------------------------
 
-        The server will then send back a packet containing the OpCode
-        "TEMPOK" (0x04) if the connection is accepted, or "TEMPKO"
-        (0x05) if the connection is refused (If the either the
-        credentials are invalid or the received packet is malformed).
-        If the connection is accepted, the TCP connection will persist, 
-        but if it is refused, the TCP connection will then be closed.
+      The server will then send back a packet containing the OpCode
+      "TEMPOK" (0x04) if the connection is accepted, or "TEMPKO"
+      (0x05) if the connection is refused (If the either the
+      credentials are invalid or the received packet is malformed).
+      If the connection is accepted, the TCP connection will persist,
+      but if it is refused, the TCP connection will then be closed.
 
 4. Public messages
 
-    A sent message is a packet containing the OpCode "MSG" (0x10) 
-    followed by a 4 bytes integer representing the length of the message
-    encoded in UTF-8, followed by the message itself.
+   A sent message is a packet containing the OpCode "MSG" (0x10) 
+   followed by a 4 bytes integer representing the length of the message
+   encoded in UTF-8, followed by the message itself.
 
-     1 byte  4 bytes    n bytes
-     ---------------------------
-    | 0x10 |  size n  | message |
-     ---------------------------
+    1 byte  4 bytes    n bytes
+    ---------------------------
+   | 0x10 |  size n  | message |
+    ---------------------------
 
-    *The message is always encoded in UTF-8.*
+   *The message is always encoded in UTF-8.*
 
-    Once the server has received a message, it will send back a packet
-    to all connected clients containing the OpCode "MSGRESP" (0x11),
-    except the client that sent said message.
-    This packet consists of a 4 bytes integer representing the length
-    of the username of the user that sent the message encoded in ASCII, 
-    followed by the username, followed by a 4 bytes integer representing
-    the size of the name of the server of the sender encoded in ASCII, 
-    followed by said server name, followed by a 4 bytes integer 
-    representing the length of the message encoded in UTF-8, 
-    followed by the message.
+   Once the server has received a message, it will send back a packet
+   to all connected clients containing the OpCode "MSGRESP" (0x11),
+   except the client that sent said message.
+   This packet consists of a 4 bytes integer representing the length
+   of the username of the user that sent the message encoded in ASCII, 
+   followed by the username, followed by the name of the server of the 
+   sender encoded in ASCII over 5 bytes, followed by a 4 bytes integer 
+   representing the length of the message encoded in UTF-8, followed by
+   the message.
 
-     1 byte  4 bytes    n bytes    4 bytes    m bytes     ...
-     -------------------------------------------------
-    | 0x11 |  size n  | username |  size m  |  server  |  ...
-     -------------------------------------------------
+    1 byte  4 bytes    n bytes     5 bytes     ...
+    -----------------------------------------
+   | 0x11 |  size n  | username | servername | ...
+    -----------------------------------------
 
-    ...   4 bytes     q bytes
-         ----------------------
-        |  size q  |  message  |
-         ----------------------
+   ...   4 bytes     q bytes
+        ----------------------
+   ... |  size q  |  message  |
+        ----------------------
 
-    The server must also transmit this packet to all of its sibiling
-    server (fusionned servers). For that, it will send them the exact
-    same packet, prepended by the OpCode "MSGFWD" (0x12).
+   The server must also transmit this packet to all of its sibiling
+   server (fusionned servers). For that, it will send them the exact
+   same packet, prepended by the OpCode "MSGFWD" (0x12).
 
-     1 byte     x bytes
-     ------------------------
-    | 0x12 |  MSGRESP packet |
-     ------------------------
+    1 byte     x bytes
+    ------------------------
+   | 0x12 |  MSGRESP packet |
+    ------------------------
 
-    Once a server receives a MSGFWD packet, it must send the content of
-    it to all of its connected clients.
+   Once a server receives a MSGFWD packet, it must send the content of
+   it to all of its connected clients.
 
 5. Private message : simple message
 
-    When a client wants to send a message to another client privately,
-    on the same network (that is to say, on the same "fusion"), it must
-    provide the name of the receiver along with the name of the server
-    on which said user is.
-    A sent private message is a packet containing the OpCode "PRIVMSG"
-    (0x20) followed by a 4 bytes integer representing the length of the
-    username of the receiver encoded in ASCII, followed by said username
-    , followed by a 4 bytes integer representing the length of the 
-    server the receiver is on, followed by said server name, followed by
-    a 4 bytes integer representing the length of the message encoded in 
-    UTF-8, followed by the message itself.
+   When a client wants to send a message to another client privately,
+   on the same network (that is to say, on the same "fusion"), it must
+   provide the name of the receiver along with the name of the server
+   on which said user is.
+   A sent private message is a packet containing the OpCode "PRIVMSG"
+   (0x20) followed by a 4 bytes integer representing the length of the
+   username of the receiver encoded in ASCII, followed by said username
+   , followed by the name of the server the recipient is on encoded in 
+   ASCII over 5 bytes, followed by a 4 bytes integer representing the 
+   length of the message encoded in UTF-8, followed by the message 
+   itself.
 
-     1 byte  4 bytes    n bytes      4 bytes    m bytes    ...
-     ----------------------------------------------------
-    | 0x20 |  size n  | r_username |  size m  | r_server | ...
-     ----------------------------------------------------
+    1 byte  4 bytes    n bytes        5 bytes      ...
+    ---------------------------------------------
+   | 0x20 |  size n  | r_username | r_servername | ...
+    ---------------------------------------------
 
-    ...   4 bytes     q bytes
-         ----------------------
-    ... |  size q  |  message  |
-         ----------------------
+   ...   4 bytes     q bytes
+        ----------------------
+   ... |  size q  |  message  |
+        ----------------------
 
-    Once the server has received a private message, it will send back a
-    packet to the concerned client. If the server name corresponds to
-    itself, the packet will be sent directly to the corresponding
-    client (thanks to the username).
-    A packet from a server to a client for a private message contains
-    the OpCode "PRIVMSGRESP" (0x21), followed by a 4 bytes integer
-    representing the length of the username of the sender encoded in
-    ASCII, followed by said username, followed by a 4 bytes integer
-    representing the length of the server name of the sender, followed
-    by the server name, followed by a 4 bytes integer representing the 
-    length of the message encoded in UTF-8, followed by the message.
+   Once the server has received a private message, it will send back a
+   packet to the concerned client. If the server name corresponds to
+   itself, the packet will be sent directly to the corresponding
+   client (thanks to the username).
+   A packet from a server to a client for a private message contains
+   the OpCode "PRIVMSGRESP" (0x21), followed by a 4 bytes integer
+   representing the length of the username of the sender encoded in
+   ASCII, followed by said username, followed by the name of the server
+   of the sender encoded in ASCII over 5 bytes, followed by a 4 bytes 
+   integer representing the length of the message encoded in UTF-8, 
+   followed by the message.
 
-     1 byte  4 bytes     n bytes     4 bytes     m bytes   ...
-     ----------------------------------------------------
-    | 0x21 |  size n  | s_username |  size m  | s_server | ...
-     ----------------------------------------------------
+    1 byte  4 bytes     n bytes       5 bytes      ...
+    ---------------------------------------------
+   | 0x21 |  size n  | s_username | s_servername | ...
+    ---------------------------------------------
 
-    ...   4 bytes     q bytes
-         ----------------------
-    ... |  size q  |  message  |
-         ----------------------
+   ...   4 bytes     q bytes
+        ----------------------
+   ... |  size q  |  message  |
+        ----------------------
 
-    However, if the server name corresponds to a server that is not
-    itself, but one of its sibilings, the packet will be sent to said
-    sibiling, prepended by the OpCode "PRIVMSGFWD" (0x22).
+   However, if the server name corresponds to a server that is not
+   itself, but one of its sibilings, the packet will be sent to said
+   sibiling, prepended by the OpCode "PRIVMSGFWD" (0x22).
 
-      1 byte       x bytes
-     ----------------------------
-    | 0x22 |  PRIVMSGRESP packet |
-     ----------------------------
+    1 byte       x bytes
+    ----------------------------
+   | 0x22 |  PRIVMSGRESP packet |
+    ----------------------------
 
-    Once a server receives a PRIVMSGFWD packet, it must send the content
-    of it to the corresponding client.
+   Once a server receives a PRIVMSGFWD packet, it must send the content
+   of it to the corresponding client.
 
 6. Private message : file
 
-    When a client wants to send a file to another client privately,
-    on the same network (that is to say, on the same "fusion"), it must
-    provide the name of the receiver along with the name of the server
-    on which said user is. Sending a file must be done in chunks.
-    A sent private file is a packet containing the OpCode "PRIVFILE"
-    (0x30) followed by a 4 bytes integer representing the length of the
-    username of the receiver encoded in ASCII, followed by said username
-    , followed by a 4 bytes integer representing the length of the 
-    server the receiver is on, followed by said server name, followed by
-    a 4 bytes integer representing the length of the file type encoded
-    in ASCII, followed by said file type, followed by a 4 bytes integer
-    representing the size of the whole file, followed by a 4 bytes
-    integer representing the file id, followed by a 4 bytes integer
-    representing the size of the chunk, followed by the chunk.
+   When a client wants to send a file to another client privately,
+   on the same network (that is to say, on the same "fusion"), it must
+   provide the name of the receiver along with the name of the server
+   on which said user is. Sending a file must be done in chunks.
+   A sent private file is a packet containing the OpCode "PRIVFILE"
+   (0x30) followed by a 4 bytes integer representing the length of the
+   username of the receiver encoded in ASCII, followed by said username
+   , followed by the name of the server the recipient is on encoded in 
+   ASCII over 5 bytes, followed by a 4 bytes integer representing the 
+   length of the file name encoded in UTF-8, followed by said file name
+   , followed by a 4 bytes integer representing the size of the whole 
+   file, followed by a 4 bytes integer representing the file id, 
+   followed by a 4 bytes integer representing the size of the chunk, 
+   followed by the chunk.
 
-     1 byte  4 bytes    n bytes      4 bytes    m bytes    ...
-     ----------------------------------------------------
-    | 0x30 |  size n  | r_username |  size m  | r_server | ...
-     ----------------------------------------------------
+    1 byte  4 bytes     n bytes       5 bytes      ...
+    ---------------------------------------------
+   | 0x30 |  size n  | r_username | r_servername | ...
+    ---------------------------------------------
 
-    ...   4 bytes     q bytes    4 bytes    4 bytes   4 bytes  r bytes
-         -------------------------------------------------------------
-    ... |  size q  | file type | file size | file id | size r | chunk |
-         -------------------------------------------------------------
+   ...   4 bytes     q bytes    4 bytes    4 bytes   4 bytes  r bytes
+        -------------------------------------------------------------
+   ... |  size q  | file name | file size | file id | size r | chunk |
+        -------------------------------------------------------------
 
-    Once the server has received a PRIVFILE packet, it will send back a
-    packet to the concerned client. If the server name corresponds to 
-    itself, the packet will be sent directly to the corresponding
-    client (thanks to the username).
-    A packet from a server to a client for a private file contains
-    the OpCode "PRIVFILERESP" (0x31), followed by a 4 bytes integer
-    representing the length of the username of the sender encoded in
-    ASCII, followed by said username, followed by a 4 bytes integer
-    representing the length of the server name of the sender, followed
-    by the server name, followed by a 4 bytes integer representing the
-    length of the file type encoded in ASCII, followed by said file type
-    , followed by a 4 bytes integer representing the size of the whole
-    file, followed by a 4 bytes integer representing the file id,
-    followed by a 4 bytes integer representing the size of the chunk,
-    followed by the chunk.
+   Once the server has received a PRIVFILE packet, it will send back a
+   packet to the concerned client. If the server name corresponds to 
+   itself, the packet will be sent directly to the corresponding
+   client (thanks to the username).
+   A packet from a server to a client for a private file contains
+   the OpCode "PRIVFILERESP" (0x31), followed by a 4 bytes integer
+   representing the length of the username of the sender encoded in
+   ASCII, followed by said username, followed by the name of the server
+   of the sender encoded in ASCII over 5 bytes, followed by a 4 bytes 
+   integer representing the length of the file name encoded in UTF-8, 
+   followed by said file name, followed by a 4 bytes integer 
+   representing the size of the whole file, followed by a 4 bytes 
+   integer representing the file id, followed by a 4 bytes integer 
+   representing the size of the chunk, followed by the chunk.
 
-     1 byte  4 bytes     n bytes     4 bytes     m bytes   ...
-     ----------------------------------------------------
-    | 0x31 |  size n  | s_username |  size m  | s_server | ...
-     ----------------------------------------------------
+    1 byte  4 bytes     n bytes       5 bytes      ...
+    ---------------------------------------------
+   | 0x31 |  size n  | s_username | s_servername | ...
+    ---------------------------------------------
 
-    ...   4 bytes     q bytes    4 bytes    4 bytes   4 bytes  r bytes
-         -------------------------------------------------------------
-    ... |  size q  | file type | file size | file id | size r | chunk |
-         -------------------------------------------------------------
+   ...   4 bytes     q bytes    4 bytes    4 bytes   4 bytes  r bytes
+        -------------------------------------------------------------
+   ... |  size q  | file name | file size | file id | size r | chunk |
+        -------------------------------------------------------------
 
-    However, if the server name corresponds to a server that is not
-    itself, but one of its sibilings, the packet will be sent to said
-    sibiling, prepended by the OpCode "PRIVFILEFWD" (0x32).
+   However, if the server name corresponds to a server that is not
+   itself, but one of its sibilings, the packet will be sent to said
+   sibiling, prepended by the OpCode "PRIVFILEFWD" (0x32).
 
-      1 byte       x bytes
-     -----------------------------
-    | 0x32 |  PRIVFILERESP packet |
-     -----------------------------
+    1 byte       x bytes
+    -----------------------------
+   | 0x32 |  PRIVFILERESP packet |
+    -----------------------------
 
-    Once a server receives a PRIVFILEFWD packet, it must send the 
-    content of it to the corresponding client.
+   Once a server receives a PRIVFILEFWD packet, it must send the 
+   content of it to the corresponding client.
 
 7. Fusion request
 
-    As said previously, servers can fusion with others recursively ;
-    that is to say that if a server A is fusionned with a server B, and
-    a server C is fusionned with a server D, then if B fusions with C,
-    the whole fusion network will be grouping all four together.
+   As said previously, servers can fusion with others recursively ;
+   that is to say that if a server A is fusionned with a server B, and
+   a server C is fusionned with a server D, then if B fusions with C,
+   the whole fusion network will be grouping all four together.
 
-    The packets will be built upon a simple construct representing
-    each servers information : a four 1 byte integers representing the
-    IPv4 address, followed by a 2 bytes integer representing the port
-    number.
+   The packets will be built upon a simple construct representing
+   each servers information : 5 bytes representing the name of the 
+   server encoded in ASCII, followed by four 1 byte integers 
+   representing the IPv4 address, followed by a 2 bytes integer 
+   representing the port number.
 
-         4 bytes    2 bytes
-     -----------------------
-    | IPv4 address |  port  |  <== server info
-     -----------------------
+      5 bytes      4 bytes      2 bytes
+    ------------------------------------
+   | servername | IPv4 address |  port  |  <== server info
+    ------------------------------------
 
-    A server can request to fusion with another server by sending a
-    packet containing the OpCode "FUSIONREQ" (0x40) followed by its
-    server information, followed by a 4 bytes integer representing the
-    number of sibiling servers it already has, followed by the server
-    information of each of them.
+   A server can request to fuse with another server by sending a
+   packet containing the OpCode "FUSIONREQ" (0x40) followed by its
+   server information, followed by a 4 bytes integer representing the
+   number of sibiling servers it already has, followed by the server
+   information of each of them.
 
-     1 byte      6 bytes          ...
-     ---------------------------
-    | 0x40 |  self server info  | ...
-     ---------------------------
+    1 byte     11 bytes          ...
+    ---------------------------
+   | 0x40 |  self server info  | ...
+    ---------------------------
 
-    ...   4 bytes     6 bytes       ...      6 bytes
-         -----------------------------------------------
-    ... |  n_sib  | server info 1 | ... | server info n |
-         -----------------------------------------------
+   ...   4 bytes     11 bytes      ...     11 bytes
+        -----------------------------------------------
+   ... |  n_sib  | server info 1 | ... | server info n |
+        -----------------------------------------------
 
-    Once a server has received a FUSIONREQ packet, it will either send 
-    back a response packet containing the OpCode "FUSIONKO" (0x43) if 
-    the fusion has been refused (in case the received packet was 
-    malformed), or a packet containing the OpCode "FUSIONRESP" (0x41), 
-    followed its server information, followed by a 4 bytes integer 
-    representing the number of sibiling servers it already has, followed
-    by the server information of each of them.
+   Once a server has received a FUSIONREQ packet, it will either send 
+   back a response packet containing the OpCode "FUSIONKO" (0x43) if 
+   the fusion has been refused (in case the received packet was 
+   malformed), or a packet containing the OpCode "FUSIONRESP" (0x41), 
+   followed by its server information, followed by a 4 bytes integer 
+   representing the number of sibiling servers it already has, followed
+   by the server information of each of them.
 
-     1 byte      6 bytes          ...
-     ---------------------------
-    | 0x41 |  self server info  | ...
-     ---------------------------
+    1 byte      11 bytes         ...
+    ---------------------------
+   | 0x41 |  self server info  | ...
+    ---------------------------
 
-    ...   4 bytes     6 bytes       ...      6 bytes
-         -----------------------------------------------
-    ... |  n_sib  | server info 1 | ... | server info n |
-         -----------------------------------------------
+   ...   4 bytes     11 bytes      ...     11 bytes
+        -----------------------------------------------
+   ... |  n_sib  | server info 1 | ... | server info n |
+        -----------------------------------------------
 
-    Moreover, it must send a packet to each of its sibilings, prepended 
-    by the OpCode "FUSIONFWD" (0x42), followed by the previously
-    received FUSIONREQ packet (the one sent by the first server).
+   Moreover, it must send a packet to each of its sibilings, prepended 
+   by the OpCode "FUSIONFWD" (0x42), followed by the previously
+   received FUSIONREQ packet (the one sent by the first server).
 
-      1 byte       x bytes
-     --------------------------
-    | 0x42 |  FUSIONREQ packet |
-     --------------------------
+    1 byte       x bytes
+    --------------------------
+   | 0x42 |  FUSIONREQ packet |
+    --------------------------
 
-    Once a server has received a FUSIONRESP packet, it will send a
-    packet to each of its sibilings, prepended by the OpCode
-    "FUSIONFWD" (0x42), followed by the received FUSIONRESP packet.
+   Once a server has received a FUSIONRESP packet, it will send a
+   packet to each of its sibilings, prepended by the OpCode
+   "FUSIONFWD" (0x42), followed by the received FUSIONRESP packet.
 
-      1 byte       x bytes
-     ---------------------------
-    | 0x42 |  FUSIONRESP packet |
-     ---------------------------
+    1 byte       x bytes
+    ---------------------------
+   | 0x42 |  FUSIONRESP packet |
+    ---------------------------
 
-    Once a server receives a FUSIONFWD packet, it may trucate the first
-    byte, and then act arcordingly (must not re-forward any packet).
+   Once a server receives a FUSIONFWD packet, it may trucate the first
+   byte, and then act arcordingly (must not re-forward any packet).
     
 
 APPENDIX
 
 OpCodes
 
-    The OpCodes are used to identify the type of packet.
+   The OpCodes are used to identify the type of packet.
 
-    Connection in Authentication mode
-        AUTH : 0x00
-        AUTHOK : 0x01
-        AUTHKO : 0x02
+   Connection in Authentication mode
+      AUTH         : 0x00
+      AUTHOK       : 0x01
+      AUTHKO       : 0x02
 
-    Connection in Temporary mode
-        TEMP : 0x03
-        TEMPOK : 0x04
-        TEMPKO : 0x05
+   Connection in Temporary mode
+      TEMP         : 0x03
+      TEMPOK       : 0x04
+      TEMPKO       : 0x05
 
-    Public messages
-        MSG : 0x10
-        MSGRESP : 0x11
-        MSGFWD : 0x12
+   Public messages
+      MSG          : 0x10
+      MSGRESP      : 0x11
+      MSGFWD       : 0x12
 
-    Private messages : simple message
-        PRIVMSG : 0x20
-        PRIVMSGRESP : 0x21
-        PRIVMSGFWD : 0x22
+   Private messages : simple message
+      PRIVMSG      : 0x20
+      PRIVMSGRESP  : 0x21
+      PRIVMSGFWD   : 0x22
 
-    Private messages : file
-        PRIVFILE : 0x30
-        PRIVFILERESP : 0x31
-        PRIVFILEFWD : 0x32
+   Private messages : file
+      PRIVFILE     : 0x30
+      PRIVFILERESP : 0x31
+      PRIVFILEFWD  : 0x32
 
-    Fusion
-        FUSIONREQ : 0x40
-        FUSIONRESP : 0x41
-        FUSIONFWD : 0x42
-        FUSIONKO : 0x43
+   Fusion
+      FUSIONREQ    : 0x40
+      FUSIONRESP   : 0x41
+      FUSIONFWD    : 0x42
+      FUSIONKO     : 0x43
