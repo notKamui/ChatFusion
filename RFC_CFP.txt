@@ -46,6 +46,8 @@ Summary
     We will be talking about "fusions" as "networks", and "servers
     connected on the same network" as "sibilings".
 
+    Every single integer must be in Big Endian format.
+
 3. Connection and authentication
 
     For a client to be able to connect to a server, it must first be
