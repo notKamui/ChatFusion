@@ -289,7 +289,7 @@ Summary
    | servername | IPv4 address |  port  |  <== server info
     ------------------------------------
 
-   A server can request to fusion with another server by sending a
+   A server can request to fuse with another server by sending a
    packet containing the OpCode "FUSIONREQ" (0x40) followed by its
    server information, followed by a 4 bytes integer representing the
    number of sibiling servers it already has, followed by the server
