@@ -307,11 +307,11 @@ Summary
 
    Once a server has received a FUSIONREQ packet, it will either send 
    back a response packet containing the OpCode "FUSIONKO" (0x43) if 
-   the fusion has been refused (in case the received packet was 
-   malformed), or a packet containing the OpCode "FUSIONRESP" (0x41), 
-   followed by its server information, followed by a 4 bytes integer 
-   representing the number of sibiling servers it already has, followed
-   by the server information of each of them.
+   the fusion has been refused (in case a fusion is already occuring or 
+   if they are already fused), or a packet containing the OpCode 
+   "FUSIONRESP" (0x41), followed by its server information, followed by 
+   a 4 bytes integer representing the number of sibiling servers it 
+   already has, followed by the server information of each of them.
 
     1 byte      11 bytes         ...
     ---------------------------
