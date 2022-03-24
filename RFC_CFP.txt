@@ -278,6 +278,10 @@ Summary
    a server C is fusionned with a server D, then if B fusions with C,
    the whole fusion network will be grouping all four together.
 
+   Each network is composed of several servers, and
+   each of them has a leader that is elected based on the alphanumeric
+   order of the server name (The leader has the "smallest" name).
+
    The packets will be built upon a simple construct representing
    each servers information : 5 bytes representing the name of the 
    server encoded in ASCII, followed by four 1 byte integers 
@@ -289,60 +293,150 @@ Summary
    | servername | IPv4 address |  port  |  <== server info
     ------------------------------------
 
-   A server can request to fuse with another server by sending a
-   packet containing the OpCode "FUSIONREQ" (0x40) followed by its
-   server information, followed by a 4 bytes integer representing the
-   number of sibiling servers it already has, followed by the server
-   information of each of them.
+   a. Fusion lock
+   
+      When a server wants to fuse with another network, the exchange 
+      must go through a lock session beforehand that is managed by the 
+      leaders of each of the two networks.
 
-    1 byte     11 bytes          ...
-    ---------------------------
-   | 0x40 |  self server info  | ...
-    ---------------------------
+      For that, let's say we have server sA, from the network nA, and
+      server sB, from the network nB. Say sA asks for a fusion to sB ; 
+      several cases can occur, and must be acted upon accordingly :
 
-   ...   4 bytes     11 bytes      ...     11 bytes
-        -----------------------------------------------
-   ... |  n_sib  | server info 1 | ... | server info n |
-        -----------------------------------------------
+      - sA is the leader of nA ; in which case, it will send a packet
+      containing the OpCode "FUSIONREQ" (0x40), followed by its server
+      info, followed by the a 4 bytes integer representing the number of
+      sibilings sA has, followed by the server infos of said sibilings,
+      to sB.
 
-   Once a server has received a FUSIONREQ packet, it will either send 
-   back a response packet containing the OpCode "FUSIONKO" (0x43) if 
-   the fusion has been refused (in case a fusion is already occuring or 
-   if they are already fused), or a packet containing the OpCode 
-   "FUSIONRESP" (0x41), followed by its server information, followed by 
-   a 4 bytes integer representing the number of sibiling servers it 
-   already has, followed by the server information of each of them.
+       1 byte     11 bytes          ...
+       ---------------------------
+      | 0x40 |  self server info  | ...
+       ---------------------------
 
-    1 byte      11 bytes         ...
-    ---------------------------
-   | 0x41 |  self server info  | ...
-    ---------------------------
+      ...   4 bytes     11 bytes      ...     11 bytes
+           -----------------------------------------------
+      ... |  n_sib  | server info 1 | ... | server info n |
+           -----------------------------------------------
 
-   ...   4 bytes     11 bytes      ...     11 bytes
-        -----------------------------------------------
-   ... |  n_sib  | server info 1 | ... | server info n |
-        -----------------------------------------------
+      Once that is done, it must enter a "fusion locked" state.
 
-   Moreover, it must send a packet to each of its sibilings, prepended 
-   by the OpCode "FUSIONFWD" (0x42), followed by the previously
-   received FUSIONREQ packet (the one sent by the first server).
+      - sA is NOT the leader of nA ; in which case, it must forward the
+      packet to the leader of nA, with a packet containing the OpCode
+      "FUSIONREQFWDA" (0x41), and the server info of sB, followed by
+      the FUSIONREQ packet.
 
-    1 byte       x bytes
-    --------------------------
-   | 0x42 |  FUSIONREQ packet |
-    --------------------------
+       1 byte      11 bytes           x bytes
+       --------------------------------------------
+      | 0x41 |  sB server info  | FUSIONREQ packet |
+       --------------------------------------------
 
-   Once a server has received a FUSIONRESP packet, it will send a
-   packet to each of its sibilings, prepended by the OpCode
-   "FUSIONFWD" (0x42), followed by the received FUSIONRESP packet.
+      Once the leader of sA receives the FUSIONREQFWDA packet, it must
+      fallback to the first case scenario.
 
-    1 byte       x bytes
-    ---------------------------
-   | 0x42 |  FUSIONRESP packet |
-    ---------------------------
+      Once sB receives the FUSIONREQ packet, several cases can occur and
+      must be acted upon accordingly :
 
-   Once a server receives a FUSIONFWD packet, it may trucate the first
-   byte, and then act arcordingly (must not re-forward any packet).
+      - sB is the leader of nB, and is not fusion locked ; in which case
+      , it must check that there is no name conflict between the servers
+      of each networks. If there is, it must send back a packet
+      containing the OpCode "FUSIONREQDENY" (0x42), back to the leader
+      of nA (in which case, nA will leave the fusion locked state).
+      If there is no conflict, it must send back a packet containing the
+      OpCode "FUSIONREQACCEPT" (0x43), followed by its server info,
+      followed by a 4 bytes integer representing the number of sibilings
+      sB has, followed by the server infos of said sibilings, to the
+      leader of nA.
+
+       1 byte     11 bytes          ...
+       ---------------------------
+      | 0x43 |  self server info  | ...
+       ---------------------------
+
+      ...   4 bytes     11 bytes      ...     11 bytes
+           -----------------------------------------------
+      ... |  n_sib  | server info 1 | ... | server info n |
+           -----------------------------------------------
+
+      Once that is done, it must enter a "fusion locked" state, and at
+      this point, the fusion can start.
+
+      - sB is the leader of nB, but is fusion locked ; in which case,
+      it must send back a packet containing the OpCode "FUSIONREQDENY" 
+      (0x42), back to the leader of nA (in which case, nA will leave the
+      fusion locked state).
+
+      - sB is NOT the leader of nB; in which case, it must forward the
+      packet to the leader of nB, with a packet containing the OpCode
+      "FUSIONREQFWDB" (0x44), and the server info of the leader of nA,
+      followed by the FUSIONREQ packet to the leader of nB.
+
+       1 byte      11 bytes                 x bytes
+       ---------------------------------------------------
+      | 0x44 |  nA leader server info  | FUSIONREQ packet |
+       ---------------------------------------------------
+
+      Once the leader of nB receives the FUSIONREQFWDB packet, it must
+      fallback to the first case scenario.
+
+   b. The actual fusion
+
+      Now that both of the leaders know of each other and all of their
+      sibilings. The fusion can start.
+
+      First, each leader will forward the content of the FUSIONREQ
+      packet and FUSIONREQACCEPT packet respectively to each of their
+      sibilings so that they know the information of the whole network.
+      For that, each leader will send a packet containing the OpCode
+      "FUSION" (0x50), followed by the FUSIONREQ/FUSIONREQACCEPT packet
+      to each of its sibilings.
+
+       1 byte            x bytes
+       ------------------------------------------
+      | 0x50 |  FUSIONREQ/FUSIONREQACCEPT packet |
+       ------------------------------------------
+
+      Once a server receives a FUSION packet, it must ask for a
+      connection to each of the servers that is contained in said 
+      packet AND that is not already linked with (that will make sense
+      later), with a packet containing the OpCode "FUSIONLINK" (0x51)
+      followed by its server info.
+
+       1 byte      11 bytes
+       ---------------------------
+      | 0x51 |  self server info  |
+       ---------------------------
+
+      Once a server receives a FUSIONLINK packet, it must check if
+      the server info contained in said packet is among the servers
+      that it received through the FUSIONREQ/FUSIONREQACCEPT packet it
+      received (so that there is no outsider server that asks for a
+      connection). If the server actually did not receive the FUSIONREQ/
+      FUSIONREQACCEPT packet, it will always deny the connection and
+      close the socket channel, but that is not a problem, since when it
+      will receive it, it will ask for the connection in the other 
+      direction. If the server did receive the FUSIONREQ/FUSIONREQACCEPT
+      and the server info contained in the packet is among the servers
+      in the former packet, it will accept the connection by sending
+      back a packet containing the OpCode "FUSIONLINKACCEPT" (0x52).
+         
+      Once a server has completed every of its requests and has waited
+      for the other servers to respond, it will send a packet to its
+      leader with the OpCode "FUSIONEND" (0x53).
+
+      Once a leader has received the FUSIONEND packet from every of
+      its sibilings, it means the fusion has been completed, and it may
+      leave the fusion locked state.
+
+      In the end, this will result in a strong mesh network (that is to
+      say, each server is connected to every other server).
+
+      It is to be noted that the leaders of each network must also
+      send their respective FUSIONLINK packets.
+
+      Moreover, since each server receives a list of every other server,
+      it will also know the server info of the new leader that is chosen
+      by its name (ascending alphanumeric order).
     
 
 APPENDIX
@@ -376,8 +470,15 @@ OpCodes
       PRIVFILERESP : 0x31
       PRIVFILEFWD  : 0x32
 
-   Fusion
+   Fusion : locking
       FUSIONREQ    : 0x40
-      FUSIONRESP   : 0x41
-      FUSIONFWD    : 0x42
-      FUSIONKO     : 0x43
+      FUSIONREQFWDA   : 0x41
+      FUSIONREQDENY   : 0x42
+      FUSIONREQACCEPT : 0x43
+      FUSIONREQFWDB   : 0x44
+   
+   Fusion : linking
+      FUSION        : 0x50
+      FUSIONLINK    : 0x51
+      FUSIONLINKACCEPT : 0x52
+      FUSIONEND     : 0x53
