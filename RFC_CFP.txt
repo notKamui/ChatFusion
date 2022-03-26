@@ -284,14 +284,16 @@ Summary
 
    The packets will be built upon a simple construct representing each 
    server information : 5 bytes representing the name of the server 
-   encoded in ASCII, followed by four 1 byte integers representing the 
-   IPv4 address, followed by a 2 bytes integer representing the port 
-   number.
+   encoded in ASCII, followed by 1 byte that is either 0 or 1, meaning 
+   that the following IP address is IPv4 or IPv6 respectively followed 
+   by either four or sixteen 1 byte integers representing the IPv4 
+   address or IPv6 address respectively, followed by a 2 bytes integer 
+   representing the port number.
 
-      5 bytes      4 bytes      2 bytes
-    ------------------------------------
-   | servername | IPv4 address |  port  |  <== server info
-    ------------------------------------
+      5 bytes    1 byte   x bytes    2 bytes
+    -----------------------------------------
+   | servername | type | IP address |  port  |  <== server info
+    -----------------------------------------
 
    a. Fusion lock
    
@@ -309,7 +311,7 @@ Summary
       siblings sA has, followed by the server infos of said siblings,
       to sB.
 
-       1 byte     11 bytes          ...
+       1 byte     x bytes          ...
        ---------------------------
       | 0x40 |  self server info  | ...
        ---------------------------
@@ -326,7 +328,7 @@ Summary
       "FUSIONREQFWDA" (0x41), and the server info of sB, followed by
       the FUSIONREQ packet.
 
-       1 byte      11 bytes           x bytes
+       1 byte      x bytes           y bytes
        --------------------------------------------
       | 0x41 |  sB server info  | FUSIONREQ packet |
        --------------------------------------------
@@ -348,12 +350,12 @@ Summary
       sB has, followed by the server infos of said siblings, to the
       leader of nA.
 
-       1 byte     11 bytes          ...
+       1 byte     x bytes          ...
        ---------------------------
       | 0x43 |  self server info  | ...
        ---------------------------
 
-      ...   4 bytes     11 bytes      ...     11 bytes
+      ...   4 bytes     x bytes      ...     x bytes
            -----------------------------------------------
       ... |  n_sib  | server info 1 | ... | server info n |
            -----------------------------------------------
@@ -371,7 +373,7 @@ Summary
       "FUSIONREQFWDB" (0x44), and the server info of the leader of nA,
       followed by the FUSIONREQ packet to the leader of nB.
 
-       1 byte      11 bytes                 x bytes
+       1 byte      x bytes                 y bytes
        ---------------------------------------------------
       | 0x44 |  nA leader server info  | FUSIONREQ packet |
        ---------------------------------------------------
@@ -402,7 +404,7 @@ Summary
       later), with a packet containing the OpCode "FUSIONLINK" (0x51)
       followed by its server info.
 
-       1 byte      11 bytes
+       1 byte      x bytes
        ---------------------------
       | 0x51 |  self server info  |
        ---------------------------
@@ -440,6 +442,10 @@ Summary
     
 
 APPENDIX
+
+Patch notes :
+    - 26/03/2022 : Added support for IPv6 addresses.
+    - 24/03/2022 : Fixed fusion locking system.
 
 OpCodes
 
