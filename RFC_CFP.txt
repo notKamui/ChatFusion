@@ -16,7 +16,7 @@ Summary
 
    This RFC specifies the standards of the CFP (ChatFusion Protocol).
    The goal of CFP is to be able to have users communicate through
-   permanent channels represented as servers, such that every users may
+   permanent channels represented as servers, such that every user may
    receive messages from one individual user.
    One such user must be able to contact another one individually,
    providing a username and a server name. One should be able to send
@@ -47,8 +47,8 @@ Summary
    which is used to identify it. A server cannot change its name once 
    started.
 
-   We will be talking about "fusions" as "networks", and "servers
-   connected on the same network" as "sibilings".
+   We will be talking about "fusions" as "networks", and "servers 
+   connected on the same network" as "siblings".
 
    Every single integer must be in Big Endian format.
 
@@ -57,8 +57,8 @@ Summary
    For a client to be able to connect to a server, it must first be
    sure that the server is willing to accept the client, that is to say
    that the server must be able to authenticate the client, and
-   therefore be in posession of the credentials of the user using said
-   client, and all other.
+   therefore be in possession of the credentials of the user using said
+   client, and all others.
 
    A user may be able to connect to a server thanks to a unique
    username and a password, OR only a unique username, in "temporary
@@ -80,8 +80,8 @@ Summary
 
       The server will then send back a packet containing the OpCode
       "AUTHOK" (0x01) if the connection is accepted, or "AUTHKO"
-      (0x02) if the connection is refused (If the either the
-      credentials are invalid or the received packet is malformed).
+      (0x02) if the connection is refused (If either the credentials are
+      invalid or the received packet is malformed).
       If the connection is accepted, the TCP connection will persist, 
       but if it is refused, the TCP connection will then be closed.
 
@@ -99,9 +99,9 @@ Summary
 
       The server will then send back a packet containing the OpCode
       "TEMPOK" (0x04) if the connection is accepted, or "TEMPKO"
-      (0x05) if the connection is refused (If the either the
-      credentials are invalid or the received packet is malformed).
-      If the connection is accepted, the TCP connection will persist,
+      (0x05) if the connection is refused (If either the credentials are
+      invalid or the received packet is malformed).
+      If the connection is accepted, the TCP connection will persist, 
       but if it is refused, the TCP connection will then be closed.
 
 4. Public messages
@@ -137,9 +137,9 @@ Summary
    ... |  size q  |  message  |
         ----------------------
 
-   The server must also transmit this packet to all of its sibiling
-   server (fusionned servers). For that, it will send them the exact
-   same packet, prepended by the OpCode "MSGFWD" (0x12).
+   The server must also transmit this packet to all of its sibling 
+   server (fused servers). For that, it will send them the exact same 
+   packet, prepended by the OpCode "MSGFWD" (0x12).
 
     1 byte     x bytes
     ------------------------
@@ -196,8 +196,8 @@ Summary
         ----------------------
 
    However, if the server name corresponds to a server that is not
-   itself, but one of its sibilings, the packet will be sent to said
-   sibiling, prepended by the OpCode "PRIVMSGFWD" (0x22).
+   itself, but one of its siblings, the packet will be sent to said 
+   sibling, prepended by the OpCode "PRIVMSGFWD" (0x22).
 
     1 byte       x bytes
     ----------------------------
@@ -260,8 +260,8 @@ Summary
         -------------------------------------------------------------
 
    However, if the server name corresponds to a server that is not
-   itself, but one of its sibilings, the packet will be sent to said
-   sibiling, prepended by the OpCode "PRIVFILEFWD" (0x32).
+   itself, but one of its siblings, the packet will be sent to said
+   sibling, prepended by the OpCode "PRIVFILEFWD" (0x32).
 
     1 byte       x bytes
     -----------------------------
@@ -274,19 +274,19 @@ Summary
 7. Fusion request
 
    As said previously, servers can fusion with others recursively ;
-   that is to say that if a server A is fusionned with a server B, and
-   a server C is fusionned with a server D, then if B fusions with C,
-   the whole fusion network will be grouping all four together.
+   that is to say that if a server A is fused with a server B, and a 
+   server C is fused with a server D, then if B fusions with C, the 
+   whole fusion network will be grouping all four together.
 
    Each network is composed of several servers, and
    each of them has a leader that is elected based on the alphanumeric
    order of the server name (The leader has the "smallest" name).
 
-   The packets will be built upon a simple construct representing
-   each servers information : 5 bytes representing the name of the 
-   server encoded in ASCII, followed by four 1 byte integers 
-   representing the IPv4 address, followed by a 2 bytes integer 
-   representing the port number.
+   The packets will be built upon a simple construct representing each 
+   server information : 5 bytes representing the name of the server 
+   encoded in ASCII, followed by four 1 byte integers representing the 
+   IPv4 address, followed by a 2 bytes integer representing the port 
+   number.
 
       5 bytes      4 bytes      2 bytes
     ------------------------------------
@@ -305,8 +305,8 @@ Summary
 
       - sA is the leader of nA ; in which case, it will send a packet
       containing the OpCode "FUSIONREQ" (0x40), followed by its server
-      info, followed by the a 4 bytes integer representing the number of
-      sibilings sA has, followed by the server infos of said sibilings,
+      info, followed by a 4 bytes integer representing the number of
+      siblings sA has, followed by the server infos of said siblings,
       to sB.
 
        1 byte     11 bytes          ...
@@ -332,20 +332,20 @@ Summary
        --------------------------------------------
 
       Once the leader of sA receives the FUSIONREQFWDA packet, it must
-      fallback to the first case scenario.
+      fall back to the first case scenario.
 
       Once sB receives the FUSIONREQ packet, several cases can occur and
       must be acted upon accordingly :
 
       - sB is the leader of nB, and is not fusion locked ; in which case
       , it must check that there is no name conflict between the servers
-      of each networks. If there is, it must send back a packet
+      of each network. If there is, it must send back a packet 
       containing the OpCode "FUSIONREQDENY" (0x42), back to the leader
       of nA (in which case, nA will leave the fusion locked state).
       If there is no conflict, it must send back a packet containing the
       OpCode "FUSIONREQACCEPT" (0x43), followed by its server info,
-      followed by a 4 bytes integer representing the number of sibilings
-      sB has, followed by the server infos of said sibilings, to the
+      followed by a 4 bytes integer representing the number of siblings
+      sB has, followed by the server infos of said siblings, to the
       leader of nA.
 
        1 byte     11 bytes          ...
@@ -377,19 +377,19 @@ Summary
        ---------------------------------------------------
 
       Once the leader of nB receives the FUSIONREQFWDB packet, it must
-      fallback to the first case scenario.
+      fall back to the first case scenario.
 
    b. The actual fusion
 
       Now that both of the leaders know of each other and all of their
-      sibilings. The fusion can start.
+      siblings. The fusion can start.
 
       First, each leader will forward the content of the FUSIONREQ
       packet and FUSIONREQACCEPT packet respectively to each of their
-      sibilings so that they know the information of the whole network.
+      siblings so that they know the information of the whole network.
       For that, each leader will send a packet containing the OpCode
       "FUSION" (0x50), followed by the FUSIONREQ/FUSIONREQACCEPT packet
-      to each of its sibilings.
+      to each of its siblings.
 
        1 byte            x bytes
        ------------------------------------------
@@ -425,7 +425,7 @@ Summary
       leader with the OpCode "FUSIONEND" (0x53).
 
       Once a leader has received the FUSIONEND packet from every of
-      its sibilings, it means the fusion has been completed, and it may
+      its siblings, it means the fusion has been completed, and it may
       leave the fusion locked state.
 
       In the end, this will result in a strong mesh network (that is to
