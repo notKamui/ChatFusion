@@ -14,7 +14,7 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
-public class Client {
+class Client {
     private final static Logger LOGGER = Logger.getLogger(Client.class.getName());
 
     private final SocketChannel sc;
@@ -27,7 +27,7 @@ public class Client {
 
     private ClientContext context;
 
-    public Client(
+    Client(
         InetSocketAddress serverAddress,
         Path downloadFolder,
         String login
@@ -43,6 +43,32 @@ public class Client {
         this.pipe = new Pipe<>();
         this.downloadFolder = downloadFolder;
         this.login = login;
+    }
+
+    /**
+     * Launches the application.
+     *
+     * @throws IOException if an IOException occurs, notably if there's a problem at the level of the network card
+     */
+    void launch() throws IOException {
+        sc.configureBlocking(false);
+        var key = sc.register(selector, SelectionKey.OP_CONNECT);
+        context = new ClientContext(key);
+        key.attach(context);
+        sc.connect(serverAddress);
+
+        console.setDaemon(true);
+        console.start();
+
+        while (!Thread.interrupted()) {
+            try {
+                selector.select(this::treatKey);
+                processCommands();
+            } catch (UncheckedIOException tunneled) {
+                silentlyClose(key);
+                throw tunneled.getCause();
+            }
+        }
     }
 
     private void consoleRun() {
@@ -96,27 +122,6 @@ public class Client {
             sc.close();
         } catch (IOException e) {
             // ignore exception
-        }
-    }
-
-    public void launch() throws IOException {
-        sc.configureBlocking(false);
-        var key = sc.register(selector, SelectionKey.OP_CONNECT);
-        context = new ClientContext(key);
-        key.attach(context);
-        sc.connect(serverAddress);
-
-        console.setDaemon(true);
-        console.start();
-
-        while (!Thread.interrupted()) {
-            try {
-                selector.select(this::treatKey);
-                processCommands();
-            } catch (UncheckedIOException tunneled) {
-                silentlyClose(key);
-                throw tunneled.getCause();
-            }
         }
     }
 
