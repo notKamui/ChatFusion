@@ -38,7 +38,11 @@ public class IdentifiedMessageReader implements Reader<IdentifiedMessage> {
         if (state == State.WAITING_SERVERNAME) {
             Readers.readCompact(buffer, servernameBuffer);
             status = REFILL;
-            if (!servernameBuffer.hasRemaining()) state = State.WAITING_MESSAGE;
+            if (!servernameBuffer.hasRemaining()) {
+                servernameBuffer.flip();
+                servername = StandardCharsets.US_ASCII.decode(servernameBuffer).toString();
+                state = State.WAITING_MESSAGE;
+            }
         }
 
         if (state == State.WAITING_MESSAGE) {
@@ -55,7 +59,7 @@ public class IdentifiedMessageReader implements Reader<IdentifiedMessage> {
 
     @Override
     public IdentifiedMessage get() {
-        if (state == State.DONE) {
+        if (state != State.DONE) {
             throw new IllegalStateException();
         }
         return new IdentifiedMessage(username, servername, message);
