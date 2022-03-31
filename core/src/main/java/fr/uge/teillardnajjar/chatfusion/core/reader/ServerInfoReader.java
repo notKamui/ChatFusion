@@ -5,6 +5,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.ServerInfo;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
@@ -92,6 +93,7 @@ public class ServerInfoReader implements Reader<ServerInfo> {
                 port = internalBuffer.getShort();
                 internalBuffer.clear();
                 state = State.DONE;
+                status = DONE;
             }
         }
 

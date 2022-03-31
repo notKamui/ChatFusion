@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
+import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class IdentifiedMessageReader implements Reader<IdentifiedMessage> {
 
@@ -29,6 +30,7 @@ public class IdentifiedMessageReader implements Reader<IdentifiedMessage> {
             if (status == DONE) {
                 identifier = identifierReader.get();
                 state = State.WAITING_MESSAGE;
+                status = REFILL;
             }
         }
 
