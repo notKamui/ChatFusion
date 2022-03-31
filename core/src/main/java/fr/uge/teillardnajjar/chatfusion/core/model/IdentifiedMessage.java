@@ -3,13 +3,11 @@ package fr.uge.teillardnajjar.chatfusion.core.model;
 import java.util.Objects;
 
 public record IdentifiedMessage(
-    String username,
-    String servername,
+    Identifier identifier,
     String message
 ) {
     public IdentifiedMessage {
-        Objects.requireNonNull(username);
-        Objects.requireNonNull(servername);
+        Objects.requireNonNull(identifier);
         Objects.requireNonNull(message);
     }
 }
