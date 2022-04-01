@@ -10,4 +10,9 @@ public record Identifier(
         Objects.requireNonNull(username);
         Objects.requireNonNull(servername);
     }
+
+    @Override
+    public String toString() {
+        return "[%s] %s :".formatted(servername, username);
+    }
 }

@@ -10,4 +10,9 @@ public record IdentifiedMessage(
         Objects.requireNonNull(identifier);
         Objects.requireNonNull(message);
     }
+
+    @Override
+    public String toString() {
+        return "%s %s".formatted(identifier, message);
+    }
 }

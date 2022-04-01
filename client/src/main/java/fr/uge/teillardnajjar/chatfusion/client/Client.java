@@ -1,5 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.client;
 
+import fr.uge.teillardnajjar.chatfusion.core.model.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.util.concurrent.Pipe;
 
 import java.io.IOException;
@@ -53,7 +54,7 @@ class Client {
     void launch() throws IOException {
         sc.configureBlocking(false);
         var key = sc.register(selector, SelectionKey.OP_CONNECT);
-        context = new ClientContext(key);
+        context = new ClientContext(key, this);
         key.attach(context);
         sc.connect(serverAddress);
 
@@ -69,6 +70,10 @@ class Client {
                 throw tunneled.getCause();
             }
         }
+    }
+
+    void logMessage(IdentifiedMessage msg) {
+        System.out.println(msg);
     }
 
     private void consoleRun() {
@@ -139,5 +144,13 @@ class Client {
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }
+    }
+
+    String login() {
+        return login;
+    }
+
+    Path downloadFolder() {
+        return downloadFolder;
     }
 }
