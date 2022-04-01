@@ -6,6 +6,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.ServerInfo;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
 
 public class FusionLockInfoReader implements Reader<FusionLockInfo> {
@@ -25,7 +26,7 @@ public class FusionLockInfoReader implements Reader<FusionLockInfo> {
         var status = ERROR;
         if (state == State.WAITING_SELF) {
             status = serverInfoReader.process(buffer);
-            if (status == ProcessStatus.DONE) {
+            if (status == DONE) {
                 self = serverInfoReader.get();
                 state = State.WAITING_SIB;
             }
@@ -33,7 +34,7 @@ public class FusionLockInfoReader implements Reader<FusionLockInfo> {
 
         if (state == State.WAITING_SIB) {
             status = serverInfoListReader.process(buffer);
-            if (status == ProcessStatus.DONE) {
+            if (status == DONE) {
                 siblings = serverInfoListReader.get();
                 state = State.DONE;
             }

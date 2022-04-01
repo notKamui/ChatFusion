@@ -1,11 +1,14 @@
 package fr.uge.teillardnajjar.chatfusion.core.context;
 
+import fr.uge.teillardnajjar.chatfusion.core.reader.Reader;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 public abstract class AbstractContext<T> implements Context {
@@ -16,9 +19,9 @@ public abstract class AbstractContext<T> implements Context {
     protected final SocketChannel sc;
     protected final ByteBuffer bin;
     protected final ByteBuffer bout;
-    private final ArrayDeque<T> queue;
+    protected final ArrayDeque<T> queue;
 
-    private boolean closed = false;
+    protected boolean closed = false;
 
     public AbstractContext(SelectionKey key) {
         Objects.requireNonNull(key);
@@ -78,4 +81,23 @@ public abstract class AbstractContext<T> implements Context {
     protected abstract void processOut();
 
     protected abstract void processIn();
+
+    protected <E> void process(
+        Reader<E> reader,
+        ByteBuffer buffer,
+        Consumer<E> onSuccess
+    ) {
+        while (buffer.hasRemaining()) {
+            switch (reader.process(buffer)) {
+                case ERROR:
+                    silentlyClose();
+                case REFILL:
+                    return;
+                case DONE:
+                    onSuccess.accept(reader.get());
+                    reader.reset();
+                    break;
+            }
+        }
+    }
 }

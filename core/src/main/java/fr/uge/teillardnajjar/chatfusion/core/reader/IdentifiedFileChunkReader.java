@@ -6,6 +6,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.Identifier;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
 
 public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
@@ -30,7 +31,7 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
         var status = ERROR;
         if (state == State.WAITING_ID) {
             status = identifierReader.process(buffer);
-            if (status == ProcessStatus.DONE) {
+            if (status == DONE) {
                 identifier = identifierReader.get();
                 state = State.WAITING_FILENAME;
             }
@@ -38,7 +39,7 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
 
         if (state == State.WAITING_FILENAME) {
             status = utf8StringReader.process(buffer);
-            if (status == ProcessStatus.DONE) {
+            if (status == DONE) {
                 filename = utf8StringReader.get();
                 state = State.WAITING_FILESIZE;
             }
@@ -46,7 +47,7 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
 
         if (state == State.WAITING_FILESIZE) {
             status = intReader.process(buffer);
-            if (status == ProcessStatus.DONE) {
+            if (status == DONE) {
                 filesize = intReader.get();
                 state = State.WAITING_FILEID;
                 intReader.reset();
@@ -55,7 +56,7 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
 
         if (state == State.WAITING_FILEID) {
             status = intReader.process(buffer);
-            if (status == ProcessStatus.DONE) {
+            if (status == DONE) {
                 fileid = intReader.get();
                 state = State.WAITING_CHUNK;
             }
@@ -63,7 +64,7 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
 
         if (state == State.WAITING_CHUNK) {
             status = chunkReader.process(buffer);
-            if (status == ProcessStatus.DONE) {
+            if (status == DONE) {
                 chunk = chunkReader.get();
                 state = State.DONE;
             }
