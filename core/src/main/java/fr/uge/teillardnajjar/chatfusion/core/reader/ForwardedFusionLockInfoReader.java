@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
-import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class ForwardedFusionLockInfoReader implements Reader<ForwardedFusionLockInfo> {
 
@@ -30,7 +29,6 @@ public class ForwardedFusionLockInfoReader implements Reader<ForwardedFusionLock
             if (status == DONE) {
                 leader = serverInfoReader.get();
                 state = State.WAITING_INFO;
-                status = REFILL;
             }
         }
 

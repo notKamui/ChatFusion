@@ -29,7 +29,6 @@ public class IdentifierReader implements Reader<Identifier> {
             if (status == DONE) {
                 username = asciiReader.get();
                 state = State.WAITING_SERVERNAME;
-                status = REFILL;
             }
         }
 

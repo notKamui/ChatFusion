@@ -8,7 +8,6 @@ import java.util.List;
 
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
-import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class FusionLockInfoReader implements Reader<FusionLockInfo> {
 
@@ -30,7 +29,6 @@ public class FusionLockInfoReader implements Reader<FusionLockInfo> {
             if (status == DONE) {
                 self = serverInfoReader.get();
                 state = State.WAITING_SIB;
-                status = REFILL;
             }
         }
 

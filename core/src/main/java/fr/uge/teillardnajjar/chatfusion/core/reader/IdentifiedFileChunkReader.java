@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
-import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
 
@@ -35,7 +34,6 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
             if (status == DONE) {
                 identifier = identifierReader.get();
                 state = State.WAITING_FILENAME;
-                status = REFILL;
             }
         }
 
@@ -44,7 +42,6 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
             if (status == DONE) {
                 filename = utf8StringReader.get();
                 state = State.WAITING_FILESIZE;
-                status = REFILL;
             }
         }
 
@@ -54,7 +51,6 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
                 filesize = intReader.get();
                 state = State.WAITING_FILEID;
                 intReader.reset();
-                status = REFILL;
             }
         }
 
@@ -63,7 +59,6 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
             if (status == DONE) {
                 fileid = intReader.get();
                 state = State.WAITING_CHUNK;
-                status = REFILL;
             }
         }
 

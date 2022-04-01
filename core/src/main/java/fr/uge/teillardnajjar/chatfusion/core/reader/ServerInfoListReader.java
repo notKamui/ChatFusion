@@ -8,7 +8,6 @@ import java.util.List;
 
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
-import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class ServerInfoListReader implements Reader<List<ServerInfo>> {
 
@@ -31,10 +30,7 @@ public class ServerInfoListReader implements Reader<List<ServerInfo>> {
                 size = intReader.get();
                 if (size < 0) status = ERROR;
                 else if (size == 0) state = State.DONE;
-                else {
-                    state = State.WAITING_INFO;
-                    status = REFILL;
-                }
+                else state = State.WAITING_INFO;
             }
         }
 
