@@ -3,16 +3,19 @@ package fr.uge.teillardnajjar.chatfusion.core.reader;
 import fr.uge.teillardnajjar.chatfusion.core.model.ForwardedFusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.ServerInfo;
+import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.nio.ByteBuffer;
 
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
+import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class ForwardedFusionLockInfoReader implements Reader<ForwardedFusionLockInfo> {
 
     private final ServerInfoReader serverInfoReader = new ServerInfoReader();
     private final FusionLockInfoReader fusionLockInfoReader = new FusionLockInfoReader();
+    private final ByteBuffer popper = ByteBuffer.allocate(1);
     private State state = State.WAITING_LEADER;
     private ServerInfo leader;
     private FusionLockInfo info;
@@ -28,7 +31,21 @@ public class ForwardedFusionLockInfoReader implements Reader<ForwardedFusionLock
             status = serverInfoReader.process(buffer);
             if (status == DONE) {
                 leader = serverInfoReader.get();
-                state = State.WAITING_INFO;
+                state = State.WAITING_POP;
+            }
+        }
+
+        if (state == State.WAITING_POP) {
+            Readers.readCompact(buffer, popper);
+            status = REFILL;
+            if (!popper.hasRemaining()) {
+                popper.flip();
+                if (popper.get() != OpCodes.FUSIONREQ) {
+                    state = State.ERROR;
+                    status = ERROR;
+                } else {
+                    state = State.WAITING_INFO;
+                }
             }
         }
 
@@ -60,5 +77,5 @@ public class ForwardedFusionLockInfoReader implements Reader<ForwardedFusionLock
         info = null;
     }
 
-    private enum State {DONE, WAITING_LEADER, WAITING_INFO, ERROR}
+    private enum State {DONE, WAITING_LEADER, WAITING_POP, WAITING_INFO, ERROR}
 }
