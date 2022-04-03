@@ -1,6 +1,9 @@
 package fr.uge.teillardnajjar.chatfusion.core.context;
 
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
+import fr.uge.teillardnajjar.chatfusion.core.reader.FrameReader;
 import fr.uge.teillardnajjar.chatfusion.core.reader.Reader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.Readers;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,7 +14,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-public abstract class AbstractContext<T> implements Context {
+public abstract class AbstractContext implements Context {
 
     protected final static Logger LOGGER = Logger.getLogger(AbstractContext.class.getName());
     private final static int BUFFER_SIZE = 32_768;
@@ -19,18 +22,25 @@ public abstract class AbstractContext<T> implements Context {
     protected final SocketChannel sc;
     protected final ByteBuffer bin;
     protected final ByteBuffer bout;
-    protected final ArrayDeque<T> queue;
+    protected final ArrayDeque<ByteBuffer> queue;
+    private final FrameReader reader;
+    private FrameVisitor visitor;
 
     protected boolean closed = false;
 
     public AbstractContext(SelectionKey key) {
         Objects.requireNonNull(key);
-
         this.key = key;
         this.sc = (SocketChannel) key.channel();
         this.bin = ByteBuffer.allocate(BUFFER_SIZE);
         this.bout = ByteBuffer.allocate(BUFFER_SIZE);
         this.queue = new ArrayDeque<>();
+        this.reader = new FrameReader();
+    }
+
+    protected void setVisitor(FrameVisitor visitor) {
+        Objects.requireNonNull(visitor);
+        this.visitor = visitor;
     }
 
     @Override
@@ -78,9 +88,23 @@ public abstract class AbstractContext<T> implements Context {
         }
     }
 
-    protected abstract void processOut();
+    protected void processOut() {
+        while (!queue.isEmpty() && bout.hasRemaining()) {
+            var buffer = queue.peek();
+            if (!buffer.hasRemaining()) {
+                queue.poll();
+                continue;
+            }
+            Readers.read(buffer, bout);
+        }
+    }
 
-    protected abstract void processIn();
+    protected void processIn() {
+        if (visitor == null) throw new AssertionError();
+        while (bin.hasRemaining()) {
+            process(reader, bin, frame -> frame.accept(visitor));
+        }
+    }
 
     protected <E> void process(
         Reader<E> reader,

@@ -1,5 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.client;
 
+import fr.uge.teillardnajjar.chatfusion.core.model.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.util.concurrent.Pipe;
 
@@ -72,8 +73,17 @@ class Client {
         }
     }
 
-    void logMessage(IdentifiedMessage msg) {
+    void logMessage(String msg) {
         System.out.println(msg);
+    }
+
+    void logMessage(IdentifiedMessage msg, boolean priv) {
+        if (priv) System.out.print(">>> ");
+        System.out.println(msg);
+    }
+
+    public void logMessage(IdentifiedFileChunk identifiedFileChunk) {
+        System.out.println(">>> " + identifiedFileChunk);
     }
 
     private void consoleRun() {
