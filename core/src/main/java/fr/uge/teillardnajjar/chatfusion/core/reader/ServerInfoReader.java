@@ -37,6 +37,7 @@ public class ServerInfoReader implements Reader<ServerInfo> {
                 internalBuffer.flip();
                 servername = StandardCharsets.US_ASCII.decode(internalBuffer).toString();
                 if (servername.contains("\0")) {
+                    state = State.ERROR;
                     status = ERROR;
                 } else {
                     state = State.WAITING_TYPE;
@@ -60,6 +61,7 @@ public class ServerInfoReader implements Reader<ServerInfo> {
                     state = State.WAITING_IPv6;
                     internalBuffer.limit(16);
                 } else {
+                    state = State.ERROR;
                     status = ERROR;
                 }
             }
@@ -96,6 +98,7 @@ public class ServerInfoReader implements Reader<ServerInfo> {
                 internalBuffer.flip();
                 port = internalBuffer.getShort();
                 if (port < 0) {
+                    state = State.ERROR;
                     status = ERROR;
                 } else {
                     internalBuffer.clear();
