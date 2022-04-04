@@ -1,25 +1,32 @@
 package fr.uge.teillardnajjar.chatfusion.client;
 
+import fr.uge.teillardnajjar.chatfusion.client.command.PrivateFileCommand;
+import fr.uge.teillardnajjar.chatfusion.client.command.PrivateMessageCommand;
+import fr.uge.teillardnajjar.chatfusion.client.command.PublicMessageCommand;
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
-final class ClientContext extends AbstractContext implements Context {
+public final class ClientContext extends AbstractContext implements Context {
     private final static Charset ASCII = StandardCharsets.US_ASCII;
     private final static Charset UTF8 = StandardCharsets.UTF_8;
 
     private final Client client;
     private final FilesManager filesManager;
+    private final Set<FileSender> fileSenders = new HashSet<>();
 
-    ClientContext(SelectionKey key, Client client) {
+    public ClientContext(SelectionKey key, Client client) {
         super(key);
         Objects.requireNonNull(client);
         this.client = client;
@@ -37,8 +44,8 @@ final class ClientContext extends AbstractContext implements Context {
         queuePacket(buffer);
     }
 
-    void queuePublicMessage(String msg) {
-        var encoded = UTF8.encode(msg);
+    public void queuePublicMessage(PublicMessageCommand cmd) {
+        var encoded = UTF8.encode(cmd.message());
         var length = encoded.remaining();
         var buffer = ByteBuffer.allocate(1 + Integer.BYTES + length);
         buffer.put(OpCodes.MSG)
@@ -47,11 +54,47 @@ final class ClientContext extends AbstractContext implements Context {
         queuePacket(buffer);
     }
 
-    void feedChunk(IdentifiedFileChunk chunk) {
+    public void queuePrivateMessage(PrivateMessageCommand cmd) {
+        var username = ASCII.encode(cmd.targetUsername());
+        var servername = ASCII.encode(cmd.targetServername());
+        var msg = UTF8.encode(cmd.message());
+        var buffer = ByteBuffer.allocate(1 + Integer.BYTES * 2 + username.remaining() + 5 + msg.remaining());
+        buffer.put(OpCodes.PRIVMSG)
+            .putInt(username.remaining())
+            .put(username)
+            .put(servername)
+            .putInt(msg.remaining())
+            .put(msg);
+        queuePacket(buffer);
+    }
+
+    public void queuePrivateFile(PrivateFileCommand cmd) {
+        try {
+            var sender = FileSender.from(cmd);
+            fileSenders.add(sender);
+            sender.sendAsync(this);
+        } catch (IOException | UncheckedIOException e) {
+            LOGGER.warning("Error while sending file");
+        }
+    }
+
+    public void finishSender(FileSender sender) {
+        fileSenders.remove(sender);
+    }
+
+    public void exit() {
+        silentlyClose();
+        fileSenders.forEach(sender -> {
+            sender.cancel();
+            finishSender(sender);
+        });
+    }
+
+    public void feedChunk(IdentifiedFileChunk chunk) {
         filesManager.feedChunk(chunk);
     }
 
-    void doConnect() throws IOException {
+    public void doConnect() throws IOException {
         if (!sc.finishConnect()) {
             LOGGER.warning("Selector lied");
             return;
@@ -60,9 +103,11 @@ final class ClientContext extends AbstractContext implements Context {
         queueLogin();
     }
 
-    private void queuePacket(ByteBuffer buffer) {
-        queue.offer(buffer);
-        processOut();
-        updateInterestOps();
+    void queuePacket(ByteBuffer buffer) {
+        synchronized (client) {
+            queue.offer(buffer);
+            processOut();
+            updateInterestOps();
+        }
     }
 }

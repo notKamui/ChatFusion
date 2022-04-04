@@ -1,5 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.client;
 
+import fr.uge.teillardnajjar.chatfusion.client.command.CommandParser;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.util.concurrent.Pipe;
@@ -7,7 +8,6 @@ import fr.uge.teillardnajjar.chatfusion.core.util.concurrent.Pipe;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -67,7 +67,7 @@ class Client {
                 selector.select(this::treatKey);
                 processCommands();
             } catch (UncheckedIOException tunneled) {
-                silentlyClose(key);
+                silentlyClose();
                 throw tunneled.getCause();
             }
         }
@@ -90,6 +90,7 @@ class Client {
         try {
             try (var scanner = new Scanner(System.in)) {
                 while (!Thread.interrupted() && scanner.hasNextLine()) {
+                    System.out.print("> ");
                     var msg = scanner.nextLine();
                     sendCommand(msg);
                 }
@@ -119,22 +120,14 @@ class Client {
     private void processCommands() {
         if (pipe.isEmpty()) return;
         var cmd = pipe.out();
-        if (cmd.equals(":quit")) {
-            LOGGER.info("Quitting");
-            try {
-                sc.close();
-            } catch (IOException e) {
-                // do nothing
-            }
-            return;
-        }
-        // TODO process
+        CommandParser.parse(cmd).ifPresentOrElse(command -> {
+            command.execute(context);
+        }, () -> System.out.println("! Unknown command : " + cmd));
     }
 
-    private void silentlyClose(SelectionKey key) {
-        var sc = (Channel) key.channel();
+    private void silentlyClose() {
         try {
-            sc.close();
+            if (sc != null) sc.close();
         } catch (IOException e) {
             // ignore exception
         }
@@ -156,11 +149,11 @@ class Client {
         }
     }
 
-    String login() {
+    public String login() {
         return login;
     }
 
-    Path downloadFolder() {
+    public Path downloadFolder() {
         return downloadFolder;
     }
 }
