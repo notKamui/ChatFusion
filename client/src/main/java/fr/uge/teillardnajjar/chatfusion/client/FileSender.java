@@ -22,6 +22,8 @@ public class FileSender {
     private final ByteBuffer header;
     private final FileChannel file;
 
+    private Thread sender;
+
     private FileSender(String username, String servername, String filename) throws IOException {
         var unameBuffer = ASCII.encode(username);
         var snameBuffer = ASCII.encode(servername);
@@ -45,8 +47,8 @@ public class FileSender {
     }
 
     public void sendAsync(ClientContext ctx) {
-        var sender = new Thread(() -> {
-            while (true) {
+        sender = new Thread(() -> {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
                     chunk.clear();
                     var read = file.read(chunk);
@@ -61,8 +63,13 @@ public class FileSender {
                     throw new UncheckedIOException(e);
                 }
             }
+            ctx.finishSender(this);
         });
         sender.setDaemon(true);
         sender.start();
+    }
+
+    public void cancel() {
+        sender.interrupt();
     }
 }

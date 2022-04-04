@@ -14,7 +14,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public final class ClientContext extends AbstractContext implements Context {
     private final static Charset ASCII = StandardCharsets.US_ASCII;
@@ -22,6 +24,7 @@ public final class ClientContext extends AbstractContext implements Context {
 
     private final Client client;
     private final FilesManager filesManager;
+    private final Set<FileSender> fileSenders = new HashSet<>();
 
     public ClientContext(SelectionKey key, Client client) {
         super(key);
@@ -67,10 +70,24 @@ public final class ClientContext extends AbstractContext implements Context {
 
     public void queuePrivateFile(PrivateFileCommand cmd) {
         try {
-            FileSender.from(cmd).sendAsync(this);
+            var sender = FileSender.from(cmd);
+            fileSenders.add(sender);
+            sender.sendAsync(this);
         } catch (IOException | UncheckedIOException e) {
             LOGGER.warning("Error while sending file");
         }
+    }
+
+    public void finishSender(FileSender sender) {
+        fileSenders.remove(sender);
+    }
+
+    public void exit() {
+        silentlyClose();
+        fileSenders.forEach(sender -> {
+            sender.cancel();
+            finishSender(sender);
+        });
     }
 
     public void feedChunk(IdentifiedFileChunk chunk) {
