@@ -59,9 +59,7 @@ final class ClientFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(PrivFileResp frame) {
-        if (ctx.feedChunk(frame.identifiedFileChunk())) {
-            client.logMessage(frame.identifiedFileChunk());
-        }
+        ctx.feedChunk(frame.identifiedFileChunk());
     }
 
     /////////////////////////////// Invalid packets BEGIN //////////////////////////////////

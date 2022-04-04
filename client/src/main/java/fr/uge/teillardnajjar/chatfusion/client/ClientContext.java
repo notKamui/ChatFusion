@@ -5,16 +5,11 @@ import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 final class ClientContext extends AbstractContext implements Context {
@@ -22,14 +17,14 @@ final class ClientContext extends AbstractContext implements Context {
     private final static Charset UTF8 = StandardCharsets.UTF_8;
 
     private final Client client;
-    private final Map<Integer, List<IdentifiedFileChunk>> files;
+    private final FilesManager filesManager;
 
     ClientContext(SelectionKey key, Client client) {
         super(key);
         Objects.requireNonNull(client);
         this.client = client;
         this.setVisitor(new ClientFrameVisitor(client, this));
-        this.files = new HashMap<>();
+        this.filesManager = new FilesManager(client);
     }
 
     private void queueLogin() {
@@ -52,16 +47,8 @@ final class ClientContext extends AbstractContext implements Context {
         queuePacket(buffer);
     }
 
-    boolean feedChunk(IdentifiedFileChunk chunk) {
-        var fileId = chunk.fileId();
-        var chunks = files.computeIfAbsent(fileId, __ -> new ArrayList<>());
-        chunks.add(chunk);
-        int size = chunks.stream().mapToInt(c -> c.chunk().capacity()).sum();
-        if (size == chunk.fileSize()) {
-            new Thread(() -> writeFile(fileId)).start();
-            return true;
-        }
-        return false;
+    void feedChunk(IdentifiedFileChunk chunk) {
+        filesManager.feedChunk(chunk);
     }
 
     void doConnect() throws IOException {
@@ -77,19 +64,5 @@ final class ClientContext extends AbstractContext implements Context {
         queue.offer(buffer);
         processOut();
         updateInterestOps();
-    }
-
-    private void writeFile(int fileId) {
-        var file = files.get(fileId);
-        var fname = client.downloadFolder().toString() + "/" + file.get(0).filename();
-        try (var channel = new FileOutputStream(fname).getChannel()) {
-            for (var chunk : file) {
-                channel.write(chunk.chunk().flip());
-            }
-        } catch (IOException e) {
-            LOGGER.warning("Error while writing file : " + fname);
-        } finally {
-            files.remove(fileId);
-        }
     }
 }
