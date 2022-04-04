@@ -1,4 +1,4 @@
-package fr.uge.teillardnajjar.chatfusion.core.model;
+package fr.uge.teillardnajjar.chatfusion.core.model.parts;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -9,7 +9,7 @@ public record IdentifiedFileChunk(
     int fileSize,
     int fileId,
     ByteBuffer chunk
-) implements Comparable<IdentifiedFileChunk> {
+) {
     public IdentifiedFileChunk {
         Objects.requireNonNull(identifier);
         Objects.requireNonNull(filename);
@@ -21,10 +21,5 @@ public record IdentifiedFileChunk(
     @Override
     public String toString() {
         return "%s file %s (size %dB)".formatted(identifier, filename, fileSize);
-    }
-
-    @Override
-    public int compareTo(IdentifiedFileChunk o) {
-        return this.fileId - o.fileId;
     }
 }

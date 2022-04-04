@@ -1,6 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.core.model.frame;
 
-import fr.uge.teillardnajjar.chatfusion.core.model.ServerInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
 
 public record FusionLink(ServerInfo info) implements Frame {
     @Override

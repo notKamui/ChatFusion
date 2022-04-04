@@ -1,7 +1,7 @@
 package fr.uge.teillardnajjar.chatfusion.client;
 
-import fr.uge.teillardnajjar.chatfusion.core.model.IdentifiedFileChunk;
-import fr.uge.teillardnajjar.chatfusion.core.model.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.util.concurrent.Pipe;
 
 import java.io.IOException;

@@ -1,6 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.core.reader;
 
-import fr.uge.teillardnajjar.chatfusion.core.model.ServerInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

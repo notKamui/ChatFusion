@@ -1,4 +1,4 @@
-package fr.uge.teillardnajjar.chatfusion.core.model;
+package fr.uge.teillardnajjar.chatfusion.core.model.parts;
 
 import java.util.List;
 import java.util.Objects;

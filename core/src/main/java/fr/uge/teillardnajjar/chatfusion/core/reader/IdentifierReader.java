@@ -1,6 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.core.reader;
 
-import fr.uge.teillardnajjar.chatfusion.core.model.Identifier;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.Identifier;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

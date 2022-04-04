@@ -1,9 +1,5 @@
 package fr.uge.teillardnajjar.chatfusion.core.reader;
 
-import fr.uge.teillardnajjar.chatfusion.core.model.ForwardedFusionLockInfo;
-import fr.uge.teillardnajjar.chatfusion.core.model.FusionLockInfo;
-import fr.uge.teillardnajjar.chatfusion.core.model.IdentifiedFileChunk;
-import fr.uge.teillardnajjar.chatfusion.core.model.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Frame;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Fusion;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionEnd;
@@ -26,6 +22,10 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivMsgResp;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Temp;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.TempKo;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.TempOk;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedFusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.util.Pair;
 
 import java.nio.ByteBuffer;

@@ -1,8 +1,8 @@
 package fr.uge.teillardnajjar.chatfusion.core.reader;
 
-import fr.uge.teillardnajjar.chatfusion.core.model.ForwardedFusionLockInfo;
-import fr.uge.teillardnajjar.chatfusion.core.model.FusionLockInfo;
-import fr.uge.teillardnajjar.chatfusion.core.model.ServerInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedFusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.nio.ByteBuffer;
