@@ -2,65 +2,34 @@ package fr.uge.teillardnajjar.chatfusion.client;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
+import fr.uge.teillardnajjar.chatfusion.core.model.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
-import fr.uge.teillardnajjar.chatfusion.core.reader.IdentifiedMessageReader;
-import fr.uge.teillardnajjar.chatfusion.core.reader.Readers;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
-import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.MSGRESP;
-import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.TEMPKO;
-import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.TEMPOK;
-
-final class ClientContext extends AbstractContext<ByteBuffer> implements Context {
+final class ClientContext extends AbstractContext implements Context {
     private final static Charset ASCII = StandardCharsets.US_ASCII;
     private final static Charset UTF8 = StandardCharsets.UTF_8;
 
     private final Client client;
-    private final IdentifiedMessageReader identifiedMessageReader = new IdentifiedMessageReader();
+    private final Map<Integer, SortedSet<IdentifiedFileChunk>> files;
 
     ClientContext(SelectionKey key, Client client) {
         super(key);
         Objects.requireNonNull(client);
         this.client = client;
-    }
-
-    @Override
-    protected void processOut() {
-        while (!queue.isEmpty() && bout.hasRemaining()) {
-            var buffer = queue.peek();
-            if (!buffer.hasRemaining()) {
-                queue.poll();
-                continue;
-            }
-            Readers.read(buffer, bout);
-        }
-    }
-
-    @Override
-    protected void processIn() {
-        while (bin.hasRemaining()) {
-            var opcode = bin.get();
-            switch (opcode) {
-                case TEMPOK -> {/*do nothing*/}
-                case TEMPKO -> {
-                    LOGGER.warning("Login failed");
-                    closed = true;
-                }
-                case MSGRESP -> process(identifiedMessageReader, bin, client::logMessage);
-
-                default -> {
-                    LOGGER.severe("Unknown opcode: " + opcode);
-                    closed = true;
-                }
-            }
-
-        }
+        this.setVisitor(new ClientFrameVisitor(client, this));
+        this.files = new HashMap<>();
     }
 
     private void queueLogin() {
@@ -83,7 +52,19 @@ final class ClientContext extends AbstractContext<ByteBuffer> implements Context
         queuePacket(buffer);
     }
 
-    public void doConnect() throws IOException {
+    boolean feedChunk(IdentifiedFileChunk chunk) {
+        var fileId = chunk.fileId();
+        var chunks = files.computeIfAbsent(fileId, __ -> new TreeSet<>());
+        chunks.add(chunk);
+        int size = chunks.stream().mapToInt(c -> c.chunk().capacity()).sum();
+        if (size == chunk.fileSize()) {
+            writeFile(fileId);
+            return true;
+        }
+        return false;
+    }
+
+    void doConnect() throws IOException {
         if (!sc.finishConnect()) {
             LOGGER.warning("Selector lied");
             return;
@@ -96,5 +77,17 @@ final class ClientContext extends AbstractContext<ByteBuffer> implements Context
         queue.offer(buffer);
         processOut();
         updateInterestOps();
+    }
+
+    private void writeFile(int fileId) {
+        var file = files.get(fileId);
+        var fname = client.downloadFolder().toString() + "/" + file.first().filename();
+        try (var channel = new FileOutputStream(fname).getChannel()) {
+            for (var chunk : file) {
+                channel.write(chunk.chunk().flip());
+            }
+        } catch (IOException e) {
+            LOGGER.warning("Error while writing file : " + fname);
+        }
     }
 }
