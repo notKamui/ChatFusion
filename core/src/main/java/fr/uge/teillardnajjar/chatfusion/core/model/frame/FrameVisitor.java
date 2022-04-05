@@ -1,45 +1,87 @@
 package fr.uge.teillardnajjar.chatfusion.core.model.frame;
 
 public interface FrameVisitor {
-    void visit(Temp frame);
+    default void visit(Temp frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(TempOk frame);
+    default void visit(TempOk frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(TempKo frame);
+    default void visit(TempKo frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(Msg frame);
+    default void visit(Msg frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(MsgResp frame);
+    default void visit(MsgResp frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(MsgFwd frame);
+    default void visit(MsgFwd frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(PrivMsg frame);
+    default void visit(PrivMsg frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(PrivMsgResp frame);
+    default void visit(PrivMsgResp frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(PrivMsgFwd frame);
+    default void visit(PrivMsgFwd frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(PrivFile frame);
+    default void visit(PrivFile frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(PrivFileResp frame);
+    default void visit(PrivFileResp frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(PrivFileFwd frame);
+    default void visit(PrivFileFwd frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(FusionReq frame);
+    default void visit(FusionReq frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(FusionReqFwdA frame);
+    default void visit(FusionReqFwdA frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(FusionReqDeny frame);
+    default void visit(FusionReqDeny frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(FusionReqAccept frame);
+    default void visit(FusionReqAccept frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(FusionReqFwdB frame);
+    default void visit(FusionReqFwdB frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(Fusion frame);
+    default void visit(Fusion frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(FusionLink frame);
+    default void visit(FusionLink frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(FusionLinkAccept frame);
+    default void visit(FusionLinkAccept frame) {
+        throw new UnsupportedOperationException();
+    }
 
-    void visit(FusionEnd frame);
+    default void visit(FusionEnd frame) {
+        throw new UnsupportedOperationException();
+    }
 }

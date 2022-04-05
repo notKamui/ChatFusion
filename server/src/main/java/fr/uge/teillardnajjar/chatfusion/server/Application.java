@@ -1,6 +1,6 @@
-package fr.uge.teillardnajjar.chafusion.server;
+package fr.uge.teillardnajjar.chatfusion.server;
 
-import fr.uge.teillardnajjar.chafusion.server.logic.Server;
+import fr.uge.teillardnajjar.chatfusion.server.logic.Server;
 
 import java.io.IOException;
 

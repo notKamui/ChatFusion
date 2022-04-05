@@ -1,4 +1,4 @@
-package fr.uge.teillardnajjar.chafusion.server.logic;
+package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
@@ -52,12 +52,14 @@ public class ServerToClientContext extends AbstractContext implements Context {
     }
 
     public void confirmUser(String username) {
+        LOGGER.info("Confirming user : " + username);
         this.username = username;
         queuePacket(ByteBuffer.allocate(1).put(OpCodes.TEMPOK).flip());
         server.confirmUser(username, this);
     }
 
     public void refuseUser() {
+        LOGGER.info("Refusing user");
         queuePacket(ByteBuffer.allocate(1).put(OpCodes.TEMPKO).flip());
         silentlyClose();
     }

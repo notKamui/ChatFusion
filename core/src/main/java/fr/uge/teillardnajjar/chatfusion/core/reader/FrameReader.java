@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSION;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONEND;
@@ -59,6 +60,8 @@ import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class FrameReader implements Reader<Frame> {
+    private final static Logger LOGGER = Logger.getLogger(FrameReader.class.getName());
+
     private final StringReader asciiReader = new StringReader(StandardCharsets.US_ASCII);
     private final StringReader utf8Reader = new StringReader(StandardCharsets.UTF_8);
     private final IdentifiedMessageReader imReader = new IdentifiedMessageReader();
@@ -66,6 +69,7 @@ public class FrameReader implements Reader<Frame> {
     private final FusionLockInfoReader fliReader = new FusionLockInfoReader();
     private final ForwardedFusionLockInfoReader ffliReader = new ForwardedFusionLockInfoReader();
     private final ServerInfoReader siReader = new ServerInfoReader();
+    private final ByteBuffer opcodeBuffer = ByteBuffer.allocate(1);
     private State state = State.WAITING_OPCODE;
     private boolean popped = false;
     private byte opcode;
@@ -79,9 +83,13 @@ public class FrameReader implements Reader<Frame> {
 
         var status = ERROR;
         if (state == State.WAITING_OPCODE) {
-            opcode = buffer.get();
-            state = State.WAITING_PAYLOAD;
+            Readers.readCompact(buffer, opcodeBuffer);
             status = REFILL;
+            if (!opcodeBuffer.hasRemaining()) {
+                opcodeBuffer.flip();
+                opcode = opcodeBuffer.get();
+                state = State.WAITING_PAYLOAD;
+            }
         }
 
         if (state == State.WAITING_PAYLOAD) {
@@ -184,6 +192,7 @@ public class FrameReader implements Reader<Frame> {
         };
         if (proc.second() == DONE) {
             value = proc.first();
+            state = State.DONE;
             return DONE;
         } else return proc.second();
     }
@@ -201,6 +210,7 @@ public class FrameReader implements Reader<Frame> {
         value = null;
         state = State.WAITING_OPCODE;
         popped = false;
+        opcodeBuffer.clear();
         opcode = 0;
         asciiReader.reset();
         utf8Reader.reset();

@@ -42,7 +42,8 @@ public final class ClientContext extends AbstractContext implements Context {
         var buffer = ByteBuffer.allocate(1 + Integer.BYTES + length);
         buffer.put(OpCodes.TEMP)
             .putInt(length)
-            .put(ASCII.encode(login));
+            .put(ASCII.encode(login))
+            .flip();
         queuePacket(buffer);
     }
 
@@ -52,7 +53,8 @@ public final class ClientContext extends AbstractContext implements Context {
         var buffer = ByteBuffer.allocate(1 + Integer.BYTES + length);
         buffer.put(OpCodes.MSG)
             .putInt(length)
-            .put(encoded);
+            .put(encoded)
+            .flip();
         queuePacket(buffer);
     }
 
@@ -66,7 +68,8 @@ public final class ClientContext extends AbstractContext implements Context {
             .put(username)
             .put(servername)
             .putInt(msg.remaining())
-            .put(msg);
+            .put(msg)
+            .flip();
         queuePacket(buffer);
     }
 

@@ -39,6 +39,7 @@ public class IdentifierReader implements Reader<Identifier> {
                 servernameBuffer.flip();
                 servername = StandardCharsets.US_ASCII.decode(servernameBuffer).toString();
                 state = State.DONE;
+                status = DONE;
             }
         }
 
