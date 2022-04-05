@@ -124,4 +124,12 @@ public abstract class AbstractContext implements Context {
             }
         }
     }
+
+    public void queuePacket(ByteBuffer buffer) {
+        synchronized (queue) {
+            queue.offer(buffer);
+            processOut();
+            updateInterestOps();
+        }
+    }
 }

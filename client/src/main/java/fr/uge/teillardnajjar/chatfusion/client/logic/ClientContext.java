@@ -104,12 +104,4 @@ public final class ClientContext extends AbstractContext implements Context {
         key.interestOps(SelectionKey.OP_WRITE);
         queueLogin();
     }
-
-    public void queuePacket(ByteBuffer buffer) {
-        synchronized (client) {
-            queue.offer(buffer);
-            processOut();
-            updateInterestOps();
-        }
-    }
 }
