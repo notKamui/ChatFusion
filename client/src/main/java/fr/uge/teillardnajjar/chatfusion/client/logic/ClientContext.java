@@ -93,6 +93,7 @@ public final class ClientContext extends AbstractContext implements Context {
             sender.cancel();
             finishSender(sender);
         });
+        Thread.currentThread().interrupt();
     }
 
     public void feedChunk(IdentifiedFileChunk chunk) {
