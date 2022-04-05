@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Random;
 
 public class FileSender {
@@ -27,7 +28,7 @@ public class FileSender {
     private FileSender(String username, String servername, String filename) throws IOException {
         var unameBuffer = ASCII.encode(username);
         var snameBuffer = ASCII.encode(servername);
-        var fnameBuffer = UTF8.encode(filename);
+        var fnameBuffer = UTF8.encode(Path.of(filename).getFileName().toString());
         var fileId = random.nextInt();
         file = new FileInputStream(filename).getChannel();
         var fileSize = (int) file.size();
