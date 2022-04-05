@@ -211,6 +211,7 @@ public class FrameReader implements Reader<Frame> {
         value = null;
         state = State.WAITING_OPCODE;
         popped = false;
+        opcodeBuffer.clear();
         opcode = 0;
         asciiReader.reset();
         utf8Reader.reset();
