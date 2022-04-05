@@ -1,6 +1,7 @@
-package fr.uge.teillardnajjar.chatfusion.client;
+package fr.uge.teillardnajjar.chatfusion.client.file;
 
 import fr.uge.teillardnajjar.chatfusion.client.command.PrivateFileCommand;
+import fr.uge.teillardnajjar.chatfusion.client.logic.ClientContext;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.io.FileInputStream;

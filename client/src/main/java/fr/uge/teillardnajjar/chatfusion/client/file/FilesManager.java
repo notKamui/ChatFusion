@@ -1,5 +1,6 @@
-package fr.uge.teillardnajjar.chatfusion.client;
+package fr.uge.teillardnajjar.chatfusion.client.file;
 
+import fr.uge.teillardnajjar.chatfusion.client.logic.Client;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 
 import java.io.FileOutputStream;
@@ -22,7 +23,7 @@ public class FilesManager {
         this.client = client;
     }
 
-    void feedChunk(IdentifiedFileChunk chunk) {
+    public void feedChunk(IdentifiedFileChunk chunk) {
         var fileId = chunk.fileId();
         int size;
         synchronized (files) {

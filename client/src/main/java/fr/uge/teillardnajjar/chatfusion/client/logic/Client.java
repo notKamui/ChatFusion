@@ -1,4 +1,4 @@
-package fr.uge.teillardnajjar.chatfusion.client;
+package fr.uge.teillardnajjar.chatfusion.client.logic;
 
 import fr.uge.teillardnajjar.chatfusion.client.command.CommandParser;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
-class Client {
+public class Client {
     private final static Logger LOGGER = Logger.getLogger(Client.class.getName());
 
     private final SocketChannel sc;
@@ -29,7 +29,7 @@ class Client {
 
     private ClientContext context;
 
-    Client(
+    public Client(
         InetSocketAddress serverAddress,
         Path downloadFolder,
         String login
@@ -52,7 +52,7 @@ class Client {
      *
      * @throws IOException if an IOException occurs, notably if there's a problem at the level of the network card
      */
-    void launch() throws IOException {
+    public void launch() throws IOException {
         sc.configureBlocking(false);
         var key = sc.register(selector, SelectionKey.OP_CONNECT);
         context = new ClientContext(key, this);
@@ -107,7 +107,6 @@ class Client {
      * @param cmd the command to send
      * @throws InterruptedException if the selector is not ready
      */
-
     private void sendCommand(String cmd) throws InterruptedException {
         if (!pipe.isEmpty()) return;
         pipe.in(cmd);
@@ -120,9 +119,10 @@ class Client {
     private void processCommands() {
         if (pipe.isEmpty()) return;
         var cmd = pipe.out();
-        CommandParser.parse(cmd).ifPresentOrElse(command -> {
-            command.execute(context);
-        }, () -> System.out.println("! Unknown command : " + cmd));
+        CommandParser.parse(cmd).ifPresentOrElse(
+            command -> command.execute(context),
+            () -> System.out.println("! Unknown command : " + cmd)
+        );
     }
 
     private void silentlyClose() {

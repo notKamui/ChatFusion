@@ -9,8 +9,8 @@ abstract class SizedReader<T> implements Reader<T> {
     private final static int BUFFER_SIZE = 1024;
 
     private final IntReader intReader = new IntReader();
+    protected final ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);
     protected State state = State.WAITING_SIZE;
-    protected ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);
     protected T value;
 
     protected void readSize(ByteBuffer buffer) {

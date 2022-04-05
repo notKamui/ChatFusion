@@ -1,8 +1,10 @@
-package fr.uge.teillardnajjar.chatfusion.client;
+package fr.uge.teillardnajjar.chatfusion.client.logic;
 
 import fr.uge.teillardnajjar.chatfusion.client.command.PrivateFileCommand;
 import fr.uge.teillardnajjar.chatfusion.client.command.PrivateMessageCommand;
 import fr.uge.teillardnajjar.chatfusion.client.command.PublicMessageCommand;
+import fr.uge.teillardnajjar.chatfusion.client.file.FileSender;
+import fr.uge.teillardnajjar.chatfusion.client.file.FilesManager;
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
@@ -103,7 +105,7 @@ public final class ClientContext extends AbstractContext implements Context {
         queueLogin();
     }
 
-    void queuePacket(ByteBuffer buffer) {
+    public void queuePacket(ByteBuffer buffer) {
         synchronized (client) {
             queue.offer(buffer);
             processOut();

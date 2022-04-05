@@ -1,5 +1,7 @@
 package fr.uge.teillardnajjar.chatfusion.client;
 
+import fr.uge.teillardnajjar.chatfusion.client.logic.Client;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
@@ -7,7 +9,7 @@ import java.nio.file.Path;
 public class Application {
     public static void main(String[] args) throws IOException {
         if (args.length != 4) {
-            System.out.println("Usage: java -jar chatfusionclient.jar <server_address> <server_port> <download_folder> <login>");
+            System.out.println("Usage: java -jar ChatFusion-client.jar <server_address> <server_port> <download_folder> <login>");
             System.exit(1);
         }
 

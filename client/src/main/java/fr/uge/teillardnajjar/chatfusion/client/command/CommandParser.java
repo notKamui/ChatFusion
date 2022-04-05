@@ -15,7 +15,7 @@ public class CommandParser {
             }
             case '@' -> {
                 var members = parseMembers(command);
-                if (members != null) yield Optional.empty();
+                if (members == null) yield Optional.empty();
                 yield Optional.of(new PrivateMessageCommand(
                     members.first(),
                     members.second(),
@@ -24,7 +24,7 @@ public class CommandParser {
             }
             case '/' -> {
                 var members = parseMembers(command);
-                if (members != null) yield Optional.empty();
+                if (members == null) yield Optional.empty();
                 yield Optional.of(new PrivateFileCommand(
                     members.first(),
                     members.second(),
