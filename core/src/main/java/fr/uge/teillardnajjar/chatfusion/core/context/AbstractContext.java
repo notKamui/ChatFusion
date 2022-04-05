@@ -101,9 +101,7 @@ public abstract class AbstractContext implements Context {
 
     protected void processIn() {
         if (visitor == null) throw new AssertionError();
-        while (bin.hasRemaining()) {
-            process(reader, bin, frame -> frame.accept(visitor));
-        }
+        process(reader, bin, frame -> frame.accept(visitor));
     }
 
     protected <E> void process(
@@ -111,9 +109,10 @@ public abstract class AbstractContext implements Context {
         ByteBuffer buffer,
         Consumer<E> onSuccess
     ) {
-        while (buffer.hasRemaining()) {
+        while (true) {
             switch (reader.process(buffer)) {
                 case ERROR:
+                    LOGGER.warning("Error while reading frame");
                     silentlyClose();
                 case REFILL:
                     return;

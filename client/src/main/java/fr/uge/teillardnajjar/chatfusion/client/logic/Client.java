@@ -90,6 +90,7 @@ public class Client {
         try {
             try (var scanner = new Scanner(System.in)) {
                 while (!Thread.interrupted() && scanner.hasNextLine()) {
+                    System.out.flush();
                     System.out.print("> ");
                     var msg = scanner.nextLine();
                     sendCommand(msg);
@@ -119,6 +120,7 @@ public class Client {
     private void processCommands() {
         if (pipe.isEmpty()) return;
         var cmd = pipe.out();
+        if (cmd.isEmpty()) return;
         CommandParser.parse(cmd).ifPresentOrElse(
             command -> command.execute(context),
             () -> System.out.println("! Unknown command : " + cmd)

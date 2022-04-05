@@ -1,4 +1,4 @@
-package fr.uge.teillardnajjar.chafusion.server.logic;
+package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.helper.Helpers;
