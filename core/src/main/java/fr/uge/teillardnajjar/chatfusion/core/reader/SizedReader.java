@@ -3,6 +3,7 @@ package fr.uge.teillardnajjar.chatfusion.core.reader;
 import java.nio.ByteBuffer;
 
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
+import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 abstract class SizedReader<T> implements Reader<T> {
@@ -13,44 +14,38 @@ abstract class SizedReader<T> implements Reader<T> {
     protected State state = State.WAITING_SIZE;
     protected T value;
 
-    protected void readSize(ByteBuffer buffer) {
-        var status = intReader.process(buffer);
-        if (status == DONE) {
-            var sizeToRead = intReader.get();
-            if (sizeToRead > BUFFER_SIZE || sizeToRead < 0) {
-                state = State.ERROR;
-                return;
-            }
-            internalBuffer.limit(sizeToRead);
-            intReader.reset();
-            state = State.WAITING_CONTENT;
-        }
-    }
-
     protected ProcessStatus internalProcess(ByteBuffer buffer) {
         if (state == State.DONE || state == State.ERROR) {
             throw new IllegalStateException();
         }
 
+        var status = ERROR;
         if (state == State.WAITING_SIZE) {
-            readSize(buffer);
-            if (state == State.ERROR) {
-                return ProcessStatus.ERROR;
+            status = intReader.process(buffer);
+            if (status == DONE) {
+                var sizeToRead = intReader.get();
+                if (sizeToRead > BUFFER_SIZE || sizeToRead < 0) {
+                    state = State.ERROR;
+                    status = ERROR;
+                } else {
+                    internalBuffer.limit(sizeToRead);
+                    intReader.reset();
+                    state = State.WAITING_CONTENT;
+                }
             }
         }
 
-        if (state != State.WAITING_CONTENT) {
-            return REFILL;
+        if (state == State.WAITING_CONTENT) {
+            Readers.readCompact(buffer, internalBuffer);
+            status = REFILL;
+            if (!internalBuffer.hasRemaining()) {
+                state = State.DONE;
+                status = DONE;
+                internalBuffer.flip();
+            }
         }
 
-        Readers.readCompact(buffer, internalBuffer);
-
-        if (internalBuffer.hasRemaining()) {
-            return REFILL;
-        }
-        state = State.DONE;
-        internalBuffer.flip();
-        return DONE;
+        return status;
     }
 
     @Override

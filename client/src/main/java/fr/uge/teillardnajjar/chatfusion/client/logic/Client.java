@@ -90,8 +90,6 @@ public class Client {
         try {
             try (var scanner = new Scanner(System.in)) {
                 while (!Thread.interrupted() && scanner.hasNextLine()) {
-                    System.out.flush();
-                    System.out.print("> ");
                     var msg = scanner.nextLine();
                     sendCommand(msg);
                 }

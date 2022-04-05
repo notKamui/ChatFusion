@@ -109,15 +109,17 @@ public abstract class AbstractContext implements Context {
         ByteBuffer buffer,
         Consumer<E> onSuccess
     ) {
-        while (true) {
-            switch (reader.process(buffer)) {
+        while (buffer.hasRemaining()) {
+            var state = reader.process(buffer);
+            switch (state) {
                 case ERROR:
                     LOGGER.warning("Error while reading frame");
                     silentlyClose();
                 case REFILL:
                     return;
                 case DONE:
-                    onSuccess.accept(reader.get());
+                    var frame = reader.get();
+                    onSuccess.accept(frame);
                     reader.reset();
                     break;
             }

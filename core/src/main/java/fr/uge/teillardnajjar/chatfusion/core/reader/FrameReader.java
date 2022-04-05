@@ -88,7 +88,6 @@ public class FrameReader implements Reader<Frame> {
             if (!opcodeBuffer.hasRemaining()) {
                 opcodeBuffer.flip();
                 opcode = opcodeBuffer.get();
-                LOGGER.info("RECEIVED OPCODE %s".formatted(Integer.toHexString(opcode)));
                 state = State.WAITING_PAYLOAD;
             }
         }
