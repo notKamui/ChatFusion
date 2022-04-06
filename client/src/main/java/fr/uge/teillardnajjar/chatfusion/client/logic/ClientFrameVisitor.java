@@ -28,7 +28,7 @@ final class ClientFrameVisitor implements FrameVisitor {
     @Override
     public void visit(TempKo frame) {
         client.logMessage("Connection has been refused by the server...");
-        ctx.silentlyClose();
+        ctx.exit();
     }
 
     @Override

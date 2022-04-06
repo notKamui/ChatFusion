@@ -7,6 +7,7 @@ import fr.uge.teillardnajjar.chatfusion.core.reader.Readers;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
@@ -76,7 +77,11 @@ public abstract class AbstractContext implements Context {
             silentlyClose();
             return;
         }
-        key.interestOps(interestOps);
+        try {
+            key.interestOps(interestOps);
+        } catch (CancelledKeyException e) {
+            // ignore exception
+        }
     }
 
     @Override

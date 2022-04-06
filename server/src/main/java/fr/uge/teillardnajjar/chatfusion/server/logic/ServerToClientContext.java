@@ -18,12 +18,14 @@ public class ServerToClientContext extends AbstractContext implements Context {
     private final static Charset UTF8 = StandardCharsets.UTF_8;
 
     private final Server server;
-    private String username;
+    private final String username;
 
-    public ServerToClientContext(SelectionKey key, Server server) {
+    public ServerToClientContext(SelectionKey key, Server server, String username) {
         super(key);
         Objects.requireNonNull(server);
+        Objects.requireNonNull(username);
         this.server = server;
+        this.username = username;
         this.setVisitor(new ServerToClientFrameVisitor(this));
     }
 
@@ -41,27 +43,10 @@ public class ServerToClientContext extends AbstractContext implements Context {
         return buffer;
     }
 
-    public boolean checkLogin(String username) {
-        return !server.connectedUsers().contains(username);
-    }
-
     @Override
     public void silentlyClose() {
         super.silentlyClose();
         server.disconnectUser(username);
-    }
-
-    public void confirmUser(String username) {
-        LOGGER.info("Confirming user : " + username);
-        this.username = username;
-        queuePacket(ByteBuffer.allocate(1).put(OpCodes.TEMPOK).flip());
-        server.confirmUser(username, this);
-    }
-
-    public void refuseUser() {
-        LOGGER.info("Refusing user");
-        queuePacket(ByteBuffer.allocate(1).put(OpCodes.TEMPKO).flip());
-        silentlyClose();
     }
 
     public void queueMessageResp(ByteBuffer messageResp) {

@@ -4,7 +4,6 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Msg;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivFile;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivMsg;
-import fr.uge.teillardnajjar.chatfusion.core.model.frame.Temp;
 
 import java.util.Objects;
 
@@ -14,17 +13,6 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
     public ServerToClientFrameVisitor(ServerToClientContext ctx) {
         Objects.requireNonNull(ctx);
         this.ctx = ctx;
-    }
-
-
-    @Override
-    public void visit(Temp frame) {
-        var username = frame.username();
-        if (ctx.checkLogin(username)) {
-            ctx.confirmUser(username);
-        } else {
-            ctx.refuseUser();
-        }
     }
 
     @Override
