@@ -109,7 +109,7 @@ public class Client {
     private void sendCommand(String cmd) throws InterruptedException {
         if (!pipe.isEmpty()) return;
         pipe.in(cmd);
-        selector.wakeup();
+        wakeup();
     }
 
     /**
@@ -155,5 +155,9 @@ public class Client {
 
     public Path downloadFolder() {
         return downloadFolder;
+    }
+
+    public void wakeup() {
+        selector.wakeup();
     }
 }

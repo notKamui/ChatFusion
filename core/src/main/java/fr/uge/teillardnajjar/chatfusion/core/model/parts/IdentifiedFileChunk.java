@@ -6,7 +6,7 @@ import java.util.Objects;
 public record IdentifiedFileChunk(
     Identifier identifier,
     String filename,
-    int fileSize,
+    long fileSize,
     int fileId,
     ByteBuffer chunk
 ) {

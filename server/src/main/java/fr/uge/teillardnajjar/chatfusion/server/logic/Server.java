@@ -123,19 +123,19 @@ public class Server {
     }
 
     public void sendPrivMsg(
-        String username,
         IdentifiedMessage message,
         ServerToClientContext serverToClientContext
     ) {
-        connectedUsers.get(username).queuePrivMsg(message, serverToClientContext);
+        connectedUsers.get(message.identifier().username())
+            .queuePrivMsg(message, serverToClientContext);
     }
 
     public void sendPrivFile(
-        String username,
         IdentifiedFileChunk identifiedFileChunk,
         ServerToClientContext serverToClientContext
     ) {
-        connectedUsers.get(username).queuePrivFile(identifiedFileChunk, serverToClientContext);
+        connectedUsers.get(identifiedFileChunk.identifier().username())
+            .queuePrivFile(identifiedFileChunk, serverToClientContext);
     }
 
     public String name() {

@@ -14,11 +14,12 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
     private final IdentifierReader identifierReader = new IdentifierReader();
     private final StringReader utf8StringReader = new StringReader(StandardCharsets.UTF_8);
     private final IntReader intReader = new IntReader();
+    private final LongReader longReader = new LongReader();
     private final ByteChunkReader chunkReader = new ByteChunkReader();
     private State state = State.WAITING_ID;
     private Identifier identifier;
     private String filename;
-    private int filesize;
+    private long filesize;
     private int fileid;
     private ByteBuffer chunk;
 
@@ -46,11 +47,15 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
         }
 
         if (state == State.WAITING_FILESIZE) {
-            status = intReader.process(buffer);
+            status = longReader.process(buffer);
             if (status == DONE) {
-                filesize = intReader.get();
-                state = State.WAITING_FILEID;
-                intReader.reset();
+                filesize = longReader.get();
+                if (filesize < 0) {
+                    state = State.ERROR;
+                    status = ERROR;
+                } else {
+                    state = State.WAITING_FILEID;
+                }
             }
         }
 
@@ -58,7 +63,12 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
             status = intReader.process(buffer);
             if (status == DONE) {
                 fileid = intReader.get();
-                state = State.WAITING_CHUNK;
+                if (fileid < 0) {
+                    state = State.ERROR;
+                    status = ERROR;
+                } else {
+                    state = State.WAITING_CHUNK;
+                }
             }
         }
 
@@ -92,6 +102,7 @@ public class IdentifiedFileChunkReader implements Reader<IdentifiedFileChunk> {
         identifierReader.reset();
         utf8StringReader.reset();
         intReader.reset();
+        longReader.reset();
         chunkReader.reset();
     }
 

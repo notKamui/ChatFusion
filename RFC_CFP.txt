@@ -219,7 +219,7 @@ Summary
    , followed by the name of the server the recipient is on encoded in 
    ASCII over 5 bytes, followed by a 4 bytes integer representing the 
    length of the file name encoded in UTF-8, followed by said file name
-   , followed by a 4 bytes integer representing the size of the whole 
+   , followed by an 8 bytes integer representing the size of the whole
    file, followed by a 4 bytes integer representing the file id, 
    followed by a 4 bytes integer representing the size of the chunk, 
    followed by the chunk.
@@ -229,7 +229,7 @@ Summary
    | 0x30 |  size n  | r_username | r_servername | ...
     ---------------------------------------------
 
-   ...   4 bytes     q bytes    4 bytes    4 bytes   4 bytes  r bytes
+   ...   4 bytes     q bytes    8 bytes    4 bytes   4 bytes  r bytes
         -------------------------------------------------------------
    ... |  size q  | file name | file size | file id | size r | chunk |
         -------------------------------------------------------------
@@ -244,7 +244,7 @@ Summary
    ASCII, followed by said username, followed by the name of the server
    of the sender encoded in ASCII over 5 bytes, followed by a 4 bytes 
    integer representing the length of the file name encoded in UTF-8, 
-   followed by said file name, followed by a 4 bytes integer 
+   followed by said file name, followed by an 8 bytes integer
    representing the size of the whole file, followed by a 4 bytes 
    integer representing the file id, followed by a 4 bytes integer 
    representing the size of the chunk, followed by the chunk.
@@ -254,7 +254,7 @@ Summary
    | 0x31 |  size n  | s_username | s_servername | ...
     ---------------------------------------------
 
-   ...   4 bytes     q bytes    4 bytes    4 bytes   4 bytes  r bytes
+   ...   4 bytes     q bytes    8 bytes    4 bytes   4 bytes  r bytes
         -------------------------------------------------------------
    ... |  size q  | file name | file size | file id | size r | chunk |
         -------------------------------------------------------------

@@ -85,6 +85,7 @@ public final class ClientContext extends AbstractContext implements Context {
 
     public void finishSender(FileSender sender) {
         fileSenders.remove(sender);
+        client.wakeup();
     }
 
     public void exit() {

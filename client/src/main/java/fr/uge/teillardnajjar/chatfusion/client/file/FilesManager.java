@@ -3,6 +3,7 @@ package fr.uge.teillardnajjar.chatfusion.client.file;
 import fr.uge.teillardnajjar.chatfusion.client.logic.Client;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,11 +26,11 @@ public class FilesManager {
 
     public void feedChunk(IdentifiedFileChunk chunk) {
         var fileId = chunk.fileId();
-        int size;
+        long size;
         synchronized (files) {
             var chunks = files.computeIfAbsent(fileId, __ -> new ArrayList<>());
             chunks.add(chunk);
-            size = chunks.stream().mapToInt(c -> c.chunk().capacity()).sum();
+            size = chunks.stream().mapToLong(c -> c.chunk().capacity()).sum();
         }
         if (size == chunk.fileSize()) {
             var writer = new Thread(() -> writeFile(fileId));
@@ -47,6 +48,8 @@ public class FilesManager {
                     channel.write(chunk.chunk().flip());
                 }
                 client.logMessage(file.get(0));
+            } catch (FileNotFoundException e) {
+                LOGGER.warning("File not found: " + fname);
             } catch (IOException e) {
                 LOGGER.warning("Error while writing file : " + fname);
             } finally {

@@ -6,7 +6,7 @@ public record ServerInfo(
     String servername,
     Type type,
     int ipv4,
-    long ipv6,
+    byte[] ipv6,
     short port
 ) {
     public ServerInfo {

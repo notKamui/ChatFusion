@@ -30,17 +30,22 @@ public class FileSender {
         var unameBuffer = ASCII.encode(username);
         var snameBuffer = ASCII.encode(servername);
         var fnameBuffer = UTF8.encode(Path.of(filename).getFileName().toString());
-        var fileId = random.nextInt();
+        var fileId = Math.abs(random.nextInt());
         file = new FileInputStream(filename).getChannel();
-        var fileSize = (int) file.size();
-        header = ByteBuffer.allocate(1 + Integer.BYTES * 4 + unameBuffer.remaining() + 5 + fnameBuffer.remaining());
+        var fileSize = file.size();
+        header = ByteBuffer.allocate(
+            1
+                + Integer.BYTES * 3
+                + Long.BYTES
+                + unameBuffer.remaining() + 5 + fnameBuffer.remaining()
+        );
         header.put(OpCodes.PRIVFILE)
             .putInt(unameBuffer.remaining())
             .put(unameBuffer)
             .put(snameBuffer)
             .putInt(fnameBuffer.remaining())
             .put(fnameBuffer)
-            .putInt(fileSize)
+            .putLong(fileSize)
             .putInt(fileId);
     }
 
@@ -59,7 +64,7 @@ public class FileSender {
                     chunk.flip();
                     if (read < BUFFER_SIZE) chunk.limit(read);
                     var buffer = ByteBuffer.allocate(header.remaining() + Integer.BYTES + chunk.remaining());
-                    buffer.put(header).putInt(read).put(chunk);
+                    buffer.put(header).putInt(read).put(chunk).flip();
                     ctx.queuePacket(buffer);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);

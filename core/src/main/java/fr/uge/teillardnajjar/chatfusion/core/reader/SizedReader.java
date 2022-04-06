@@ -7,7 +7,7 @@ import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 abstract class SizedReader<T> implements Reader<T> {
-    private final static int BUFFER_SIZE = 1024;
+    private final static int BUFFER_SIZE = 32_768;
 
     private final IntReader intReader = new IntReader();
     protected final ByteBuffer internalBuffer = ByteBuffer.allocate(BUFFER_SIZE);

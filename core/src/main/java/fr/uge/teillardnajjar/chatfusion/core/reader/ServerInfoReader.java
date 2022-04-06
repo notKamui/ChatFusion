@@ -11,17 +11,17 @@ import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.
 
 public class ServerInfoReader implements Reader<ServerInfo> {
 
-    private final ByteBuffer internalBuffer = ByteBuffer.allocate(16);
+    private final IntReader intReader = new IntReader();
+    private final Int16BReader int16BReader = new Int16BReader();
+    private final ShortReader shortReader = new ShortReader();
+    private final StringReader asciiReader = new StringReader(StandardCharsets.US_ASCII);
+    private final ByteBuffer typeBuffer = ByteBuffer.allocate(1);
     private State state = State.WAITING_SERVERNAME;
     private String servername;
     private ServerInfo.Type type;
     private int ipv4;
-    private long ipv6;
+    private byte[] ipv6 = new byte[16];
     private short port;
-
-    public ServerInfoReader() {
-        internalBuffer.limit(5);
-    }
 
     @Override
     public ProcessStatus process(ByteBuffer buffer) {
@@ -31,35 +31,29 @@ public class ServerInfoReader implements Reader<ServerInfo> {
 
         var status = ERROR;
         if (state == State.WAITING_SERVERNAME) {
-            Readers.readCompact(buffer, internalBuffer);
-            status = REFILL;
-            if (!internalBuffer.hasRemaining()) {
-                internalBuffer.flip();
-                servername = StandardCharsets.US_ASCII.decode(internalBuffer).toString();
+            status = asciiReader.process(buffer);
+            if (status == DONE) {
+                servername = asciiReader.get();
                 if (servername.contains("\0")) {
                     state = State.ERROR;
                     status = ERROR;
                 } else {
                     state = State.WAITING_TYPE;
-                    internalBuffer.clear();
-                    internalBuffer.limit(1);
                 }
             }
         }
 
         if (state == State.WAITING_TYPE) {
-            Readers.readCompact(buffer, internalBuffer);
+            Readers.readCompact(buffer, typeBuffer);
             status = REFILL;
-            if (!internalBuffer.hasRemaining()) {
-                internalBuffer.flip();
-                type = ServerInfo.Type.values()[internalBuffer.get()];
-                internalBuffer.clear();
+            if (!typeBuffer.hasRemaining()) {
+                typeBuffer.flip();
+                type = ServerInfo.Type.values()[typeBuffer.get()];
+                typeBuffer.clear();
                 if (type == ServerInfo.Type.IPv4) {
                     state = State.WAITING_IPv4;
-                    internalBuffer.limit(4);
                 } else if (type == ServerInfo.Type.IPv6) {
                     state = State.WAITING_IPv6;
-                    internalBuffer.limit(16);
                 } else {
                     state = State.ERROR;
                     status = ERROR;
@@ -68,42 +62,30 @@ public class ServerInfoReader implements Reader<ServerInfo> {
         }
 
         if (state == State.WAITING_IPv4) {
-            Readers.readCompact(buffer, internalBuffer);
-            status = REFILL;
-            if (!internalBuffer.hasRemaining()) {
-                internalBuffer.flip();
-                ipv4 = internalBuffer.getInt();
-                internalBuffer.clear();
+            status = intReader.process(buffer);
+            if (status == DONE) {
+                ipv4 = intReader.get();
                 state = State.WAITING_PORT;
-                internalBuffer.limit(2);
             }
         }
 
         if (state == State.WAITING_IPv6) {
-            Readers.readCompact(buffer, internalBuffer);
-            status = REFILL;
-            if (!internalBuffer.hasRemaining()) {
-                internalBuffer.flip();
-                ipv6 = internalBuffer.getLong();
-                internalBuffer.clear();
+            status = int16BReader.process(buffer);
+            if (status == DONE) {
+                ipv6 = int16BReader.get();
                 state = State.WAITING_PORT;
-                internalBuffer.limit(2);
             }
         }
 
         if (state == State.WAITING_PORT) {
-            Readers.readCompact(buffer, internalBuffer);
-            status = REFILL;
-            if (!internalBuffer.hasRemaining()) {
-                internalBuffer.flip();
-                port = internalBuffer.getShort();
+            status = shortReader.process(buffer);
+            if (status == DONE) {
+                port = shortReader.get();
                 if (port < 0) {
                     state = State.ERROR;
                     status = ERROR;
                 } else {
-                    internalBuffer.clear();
                     state = State.DONE;
-                    status = DONE;
                 }
             }
         }
@@ -121,14 +103,17 @@ public class ServerInfoReader implements Reader<ServerInfo> {
 
     @Override
     public void reset() {
-        internalBuffer.clear();
-        internalBuffer.limit(5);
         state = State.WAITING_SERVERNAME;
         servername = null;
         type = null;
         ipv4 = 0;
-        ipv6 = 0;
+        ipv6 = new byte[16];
         port = 0;
+        intReader.reset();
+        int16BReader.reset();
+        shortReader.reset();
+        asciiReader.reset();
+        typeBuffer.clear();
     }
 
     private enum State {DONE, WAITING_SERVERNAME, WAITING_TYPE, WAITING_IPv4, WAITING_IPv6, WAITING_PORT, ERROR}

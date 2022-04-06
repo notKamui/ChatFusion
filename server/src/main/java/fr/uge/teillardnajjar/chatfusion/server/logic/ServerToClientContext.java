@@ -90,7 +90,7 @@ public class ServerToClientContext extends AbstractContext implements Context {
         var fnameBuffer = UTF8.encode(identifiedFileChunk.filename());
         var chunkBuffer = identifiedFileChunk.chunk().flip();
         var buffer = ByteBuffer.allocate(
-            1 + Integer.BYTES * 5 + 5 +
+            1 + Integer.BYTES * 4 + Long.BYTES + 5 +
                 unameBuffer.remaining() + fnameBuffer.remaining() + chunkBuffer.remaining()
         );
         buffer.put(OpCodes.PRIVFILERESP)
@@ -99,7 +99,7 @@ public class ServerToClientContext extends AbstractContext implements Context {
             .put(snameBuffer)
             .putInt(fnameBuffer.remaining())
             .put(fnameBuffer)
-            .putInt(identifiedFileChunk.fileSize())
+            .putLong(identifiedFileChunk.fileSize())
             .putInt(identifiedFileChunk.fileId())
             .putInt(chunkBuffer.remaining())
             .put(chunkBuffer)
@@ -117,15 +117,16 @@ public class ServerToClientContext extends AbstractContext implements Context {
 
     public void sendPrivMsg(IdentifiedMessage message) {
         if (checkIdentity(message.identifier())) {
-            server.sendPrivMsg(username, message, this);
+            server.sendPrivMsg(message, this);
         } else {
             // TODO forward
         }
     }
 
     public void sendPrivFile(IdentifiedFileChunk identifiedFileChunk) {
+        LOGGER.info("Sending file : " + identifiedFileChunk.filename());
         if (checkIdentity(identifiedFileChunk.identifier())) {
-            server.sendPrivFile(username, identifiedFileChunk, this);
+            server.sendPrivFile(identifiedFileChunk, this);
         } else {
             // TODO forward
         }
