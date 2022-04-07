@@ -64,7 +64,6 @@ public abstract class AbstractContext implements Context {
     @Override
     public void updateInterestOps() {
         int interestOps = 0;
-        if (closed) System.out.println("AAAAAAAAAAAAAAAAa");
         if (!closed && bin.hasRemaining()) {
             interestOps |= SelectionKey.OP_READ;
         }

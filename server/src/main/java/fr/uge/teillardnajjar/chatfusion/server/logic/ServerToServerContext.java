@@ -176,6 +176,33 @@ public class ServerToServerContext extends AbstractContext implements Context {
         server.sendPrivFile(filechunk);
     }
 
+    public boolean isFusionLocked() {
+        return server.isFusionLocked();
+    }
+
+    public boolean checkServers(FusionLockInfo info) {
+        return server.checkServer(info.self().servername()) &&
+            info.siblings().stream().allMatch(s -> server.checkServer(s.servername()));
+    }
+
+    public void queueFusionReqDeny() {
+        queuePacket(ByteBuffer.allocate(1).put(OpCodes.FUSIONREQDENY).flip());
+        closed = true;
+        server.wakeup();
+    }
+
+    public void acceptFusion(FusionLockInfo info) {
+        var newCtx = new ServerToServerContext(key, server, null);
+        key.attach(newCtx);
+        server.confirmServer(info, newCtx);
+        newCtx.queueFusionReqAccept();
+        //server.broadcast(info);
+        try {
+            newCtx.doWrite();
+        } catch (IOException e) {
+            silentlyClose();
+        }
+    }
 
     public enum ReqType {FUSIONREQ, FUSIONLINK}
 }

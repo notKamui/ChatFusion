@@ -7,6 +7,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLinkAccept;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqAccept;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqDeny;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqFwdA;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqFwdB;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.MsgFwd;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivFileFwd;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivMsgFwd;
@@ -21,6 +22,15 @@ public class ServerToServerFrameVisitor implements FrameVisitor {
     @Override
     public void visit(FusionReqFwdA frame) {
         ctx.fusion(frame.inet());
+    }
+
+    @Override
+    public void visit(FusionReqFwdB frame) {
+        if (ctx.isFusionLocked() || !ctx.checkServers(frame.info())) {
+            ctx.queueFusionReqDeny();
+        } else {
+            ctx.acceptFusion(frame.info());
+        }
     }
 
     @Override

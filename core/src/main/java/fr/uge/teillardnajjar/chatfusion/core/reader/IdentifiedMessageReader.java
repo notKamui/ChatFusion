@@ -32,8 +32,6 @@ public class IdentifiedMessageReader implements Reader<IdentifiedMessage> {
             }
         }
 
-        System.out.println("ID state = " + state);
-
         if (state == State.WAITING_MESSAGE) {
             status = utf8Reader.process(buffer);
             if (status == DONE) {
@@ -41,8 +39,6 @@ public class IdentifiedMessageReader implements Reader<IdentifiedMessage> {
                 state = State.DONE;
             }
         }
-
-        System.out.println("MESSAGE state = " + state);
 
         return status;
     }

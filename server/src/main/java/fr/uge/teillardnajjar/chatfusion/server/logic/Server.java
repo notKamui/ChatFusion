@@ -398,4 +398,14 @@ public class Server {
         if (dest == null) return;
         dest.queuePrivFile(filechunk.chunk(), filechunk.chunk().identifier());
     }
+
+    public void printInfo() {
+        System.out.println("Server Info: ");
+        System.out.println("\tHostname: " + address().getAddress());
+        System.out.println("\tPort: " + address().getPort());
+        System.out.println("\tName: " + name);
+        System.out.println("\tLeader: " + (leader == null ? "No leader" : leader));
+        System.out.println("\tSiblings: " + siblings.size());
+        System.out.println("\tUsers: " + connectedUsers.size());
+    }
 }

@@ -183,7 +183,6 @@ public class FrameReader implements Reader<Frame> {
 
             default -> Pair.of(null, ERROR);
         };
-        System.out.println("opcode: " + Integer.toHexString(opcode));
         if (proc.second() == DONE) {
             value = proc.first();
             state = State.DONE;
