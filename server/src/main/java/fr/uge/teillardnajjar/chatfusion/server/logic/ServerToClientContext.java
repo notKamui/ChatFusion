@@ -30,17 +30,8 @@ public class ServerToClientContext extends AbstractContext implements Context {
     }
 
     public ByteBuffer buildMessageResp(String message) {
-        var unameBuffer = ASCII.encode(username);
-        var snameBuffer = ASCII.encode(server.name());
-        var msgBuffer = UTF8.encode(message);
-        var buffer = ByteBuffer.allocate(1 + Integer.BYTES * 2 + 5 + unameBuffer.remaining() + msgBuffer.remaining());
-        buffer.put(OpCodes.MSGRESP)
-            .putInt(unameBuffer.remaining())
-            .put(unameBuffer)
-            .put(snameBuffer)
-            .putInt(msgBuffer.remaining())
-            .put(msgBuffer);
-        return buffer;
+        return new IdentifiedMessage(new Identifier(username, server.name()), message)
+            .toUnflippedBuffer();
     }
 
     @Override
@@ -51,12 +42,16 @@ public class ServerToClientContext extends AbstractContext implements Context {
 
     public void queueMessageResp(ByteBuffer messageResp) {
         messageResp.flip();
-        queuePacket(messageResp);
+        var buffer = ByteBuffer.allocate(messageResp.remaining() + 1)
+            .put(OpCodes.MSGRESP)
+            .put(messageResp)
+            .flip();
+        queuePacket(buffer);
     }
 
-    public void queuePrivMsg(IdentifiedMessage message, ServerToClientContext serverToClientContext) {
-        var unameBuffer = ASCII.encode(serverToClientContext.username);
-        var snameBuffer = ASCII.encode(server.name());
+    public void queuePrivMsg(IdentifiedMessage message, Identifier from) {
+        var unameBuffer = ASCII.encode(from.username());
+        var snameBuffer = ASCII.encode(from.servername());
         var msgBuffer = UTF8.encode(message.message());
         var buffer = ByteBuffer.allocate(1 + Integer.BYTES * 2 + 5 + unameBuffer.remaining() + msgBuffer.remaining());
         buffer.put(OpCodes.PRIVMSGRESP)
@@ -69,9 +64,9 @@ public class ServerToClientContext extends AbstractContext implements Context {
         queuePacket(buffer);
     }
 
-    public void queuePrivFile(IdentifiedFileChunk identifiedFileChunk, ServerToClientContext serverToClientContext) {
-        var unameBuffer = ASCII.encode(serverToClientContext.username);
-        var snameBuffer = ASCII.encode(server.name());
+    public void queuePrivFile(IdentifiedFileChunk identifiedFileChunk, Identifier from) {
+        var unameBuffer = ASCII.encode(from.username());
+        var snameBuffer = ASCII.encode(from.servername());
         var fnameBuffer = UTF8.encode(identifiedFileChunk.filename());
         var chunkBuffer = identifiedFileChunk.chunk().flip();
         var buffer = ByteBuffer.allocate(
@@ -93,7 +88,7 @@ public class ServerToClientContext extends AbstractContext implements Context {
     }
 
     public void broadcast(String message) {
-        server.broadcast(message, this);
+        server.broadcast(message, this, true);
     }
 
     private boolean checkIdentity(Identifier identifier) {
@@ -104,7 +99,7 @@ public class ServerToClientContext extends AbstractContext implements Context {
         if (checkIdentity(message.identifier())) {
             server.sendPrivMsg(message, this);
         } else {
-            // TODO forward
+            server.forward(message, this);
         }
     }
 
@@ -113,7 +108,11 @@ public class ServerToClientContext extends AbstractContext implements Context {
         if (checkIdentity(identifiedFileChunk.identifier())) {
             server.sendPrivFile(identifiedFileChunk, this);
         } else {
-            // TODO forward
+            server.forward(identifiedFileChunk, this);
         }
+    }
+
+    public String username() {
+        return username;
     }
 }

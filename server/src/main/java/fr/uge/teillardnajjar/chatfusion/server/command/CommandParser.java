@@ -5,11 +5,12 @@ import java.util.Optional;
 public class CommandParser {
 
     public static Optional<Command> parse(String command) {
-        return switch (command) {
+        return switch (command.toUpperCase()) {
             case "SHUTDOWN" -> Optional.of(new Shutdown());
             case "SHUTDOWNNOW" -> Optional.of(new ShutdownNow());
+            case "INFO" -> Optional.of(new InfoCommand());
             default -> {
-                if (command.startsWith("FUSION")) {
+                if (command.toUpperCase().startsWith("FUSION")) {
                     yield Optional.ofNullable(parseFusionCommand(command));
                 } else {
                     yield Optional.empty();
@@ -23,7 +24,7 @@ public class CommandParser {
         if (parts.length != 3) return null;
         short port;
         try {
-            port = Short.parseShort(parts[1]);
+            port = Short.parseShort(parts[2]);
         } catch (NumberFormatException e) {
             return null;
         }

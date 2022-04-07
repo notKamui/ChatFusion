@@ -2,7 +2,6 @@ package fr.uge.teillardnajjar.chatfusion.core.context;
 
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
 import fr.uge.teillardnajjar.chatfusion.core.reader.FrameReader;
-import fr.uge.teillardnajjar.chatfusion.core.reader.Reader;
 import fr.uge.teillardnajjar.chatfusion.core.reader.Readers;
 
 import java.io.IOException;
@@ -12,14 +11,13 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 public abstract class AbstractContext implements Context {
 
     protected final static Logger LOGGER = Logger.getLogger(AbstractContext.class.getName());
     private final static int BUFFER_SIZE = 32_768;
-    protected final SelectionKey key;
+    public final SelectionKey key;
     protected final SocketChannel sc;
     protected final ByteBuffer bin;
     protected final ByteBuffer bout;
@@ -106,16 +104,8 @@ public abstract class AbstractContext implements Context {
 
     protected void processIn() {
         if (visitor == null) throw new AssertionError();
-        process(reader, bin, frame -> frame.accept(visitor));
-    }
-
-    protected <E> void process(
-        Reader<E> reader,
-        ByteBuffer buffer,
-        Consumer<E> onSuccess
-    ) {
-        while (buffer.hasRemaining()) {
-            var state = reader.process(buffer);
+        while (bin.hasRemaining()) {
+            var state = reader.process(bin);
             switch (state) {
                 case ERROR:
                     LOGGER.warning("Error while reading frame");
@@ -124,7 +114,7 @@ public abstract class AbstractContext implements Context {
                     return;
                 case DONE:
                     var frame = reader.get();
-                    onSuccess.accept(frame);
+                    frame.accept(visitor);
                     reader.reset();
                     break;
             }
