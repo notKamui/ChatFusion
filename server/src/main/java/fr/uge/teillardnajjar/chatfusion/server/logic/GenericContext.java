@@ -69,4 +69,21 @@ public class GenericContext extends FusionContext implements Context {
         server.forwardFusionReq(info);
         closed = true;
     }
+
+    public void abortFusion() {
+        server.setFusionLock(false);
+        closed = true;
+    }
+
+    public void engageFusion(FusionLockInfo info) {
+        var newCtx = new ServerToServerContext(key, server, null);
+        key.attach(newCtx);
+        server.confirmServer(info, newCtx);
+        newCtx.engageFusion(info);
+        try {
+            newCtx.doWrite();
+        } catch (IOException e) {
+            silentlyClose();
+        }
+    }
 }

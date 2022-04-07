@@ -26,11 +26,7 @@ public class ServerToServerFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(FusionReqFwdB frame) {
-        if (ctx.isFusionLocked() || !ctx.checkServers(frame.info())) {
-            ctx.queueFusionReqDeny();
-        } else {
-            ctx.acceptFusion(frame.info());
-        }
+        ctx.fusionForward(frame.info());
     }
 
     @Override

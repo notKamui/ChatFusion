@@ -345,6 +345,20 @@ public class Server {
         leaderCtx.queueFusionReqFwdA(address, port);
     }
 
+    public void forwardFusion(FusionLockInfo info) {
+        try {
+            var sc = SocketChannel.open();
+            sc.configureBlocking(false);
+            var key = sc.register(selector, SelectionKey.OP_CONNECT);
+            var ctx = new ServerToServerContext(key, this, ServerToServerContext.ReqType.FUSIONREQRESP, info);
+            key.attach(ctx);
+            var otherAddress = new InetSocketAddress(info.self().ip(), info.self().port());
+            sc.connect(otherAddress);
+        } catch (IOException e) {
+            LOGGER.info("Failed to forward");
+        }
+    }
+
     private void link(ServerInfo serverInfo) {
         try {
             var sc = SocketChannel.open();

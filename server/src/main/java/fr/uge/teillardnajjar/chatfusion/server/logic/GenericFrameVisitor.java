@@ -3,6 +3,8 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLink;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReq;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqAccept;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqDeny;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Temp;
 
 public class GenericFrameVisitor implements FrameVisitor {
@@ -43,5 +45,15 @@ public class GenericFrameVisitor implements FrameVisitor {
         } else {
             ctx.refuseLink();
         }
+    }
+
+    @Override
+    public void visit(FusionReqDeny frame) {
+        ctx.abortFusion();
+    }
+
+    @Override
+    public void visit(FusionReqAccept frame) {
+        ctx.engageFusion(frame.info());
     }
 }

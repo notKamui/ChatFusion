@@ -18,11 +18,17 @@ import java.nio.charset.StandardCharsets;
 public class ServerToServerContext extends FusionContext implements Context {
     private final static Charset ASCII = StandardCharsets.US_ASCII;
     public final ReqType reqType;
+    public final FusionLockInfo fusionLockInfo;
 
-    public ServerToServerContext(SelectionKey key, Server server, ReqType reqType) {
+    public ServerToServerContext(SelectionKey key, Server server, ReqType reqType, FusionLockInfo info) {
         super(key, server);
         this.reqType = reqType;
         this.setVisitor(new ServerToServerFrameVisitor(this));
+        this.fusionLockInfo = info;
+    }
+
+    public ServerToServerContext(SelectionKey key, Server server, ReqType reqType) {
+        this(key, server, reqType, null);
     }
 
     public void queueFusionReq() {
@@ -108,19 +114,6 @@ public class ServerToServerContext extends FusionContext implements Context {
         //server.checkServer(name);
     }
 
-    public void doConnect() throws IOException {
-        if (!sc.finishConnect()) {
-            LOGGER.warning("Selector lied");
-            return;
-        }
-        key.interestOps(SelectionKey.OP_WRITE);
-        if (reqType == ReqType.FUSIONREQ) {
-            queueFusionReq();
-        } else {
-            queueFusionLink();
-        }
-    }
-
     public void receiveFusionEnd() {
         server.setFusionLock(false);
     }
@@ -170,5 +163,30 @@ public class ServerToServerContext extends FusionContext implements Context {
         server.sendPrivFile(filechunk);
     }
 
-    public enum ReqType {FUSIONREQ, FUSIONLINK}
+    public void fusionForward(FusionLockInfo info) {
+        server.forwardFusion(info);
+    }
+
+    private void fusionResponseAct() {
+        if (isFusionLocked() || !checkServers(fusionLockInfo)) {
+            queueFusionReqDeny();
+        } else {
+            acceptFusion(fusionLockInfo);
+        }
+    }
+
+    public void doConnect() throws IOException {
+        if (!sc.finishConnect()) {
+            LOGGER.warning("Selector lied");
+            return;
+        }
+        key.interestOps(SelectionKey.OP_WRITE);
+        switch (reqType) {
+            case FUSIONREQ -> queueFusionReq();
+            case FUSIONLINK -> queueFusionLink();
+            case FUSIONREQRESP -> fusionResponseAct();
+        }
+    }
+
+    public enum ReqType {FUSIONREQ, FUSIONREQRESP, FUSIONLINK}
 }
