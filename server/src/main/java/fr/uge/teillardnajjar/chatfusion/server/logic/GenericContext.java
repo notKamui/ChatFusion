@@ -50,7 +50,6 @@ public class GenericContext extends FusionContext implements Context {
 
     public void refuseLink() {
         closed = true;
-        server.wakeup();
     }
 
     public void acceptLink(ServerInfo info) {
@@ -58,16 +57,11 @@ public class GenericContext extends FusionContext implements Context {
         key.attach(newCtx);
         server.confirmServer(info, newCtx);
         newCtx.queueFusionLinkAccept();
-        try {
-            newCtx.doWrite();
-        } catch (IOException e) {
-            silentlyClose();
-        }
     }
 
     public void forwardFusionReq(FusionLockInfo info) {
         server.forwardFusionReq(info);
-        closed = true;
+        //closed = true;
     }
 
     public void abortFusion() {
@@ -80,10 +74,5 @@ public class GenericContext extends FusionContext implements Context {
         key.attach(newCtx);
         server.confirmServer(info, newCtx);
         newCtx.engageFusion(info);
-        try {
-            newCtx.doWrite();
-        } catch (IOException e) {
-            silentlyClose();
-        }
     }
 }

@@ -423,8 +423,4 @@ public class Server {
         System.out.println("\tSiblings: " + siblings.size());
         System.out.println("\tUsers: " + connectedUsers.size());
     }
-
-    public void addSibiling(ServerInfo info, ServerToServerContext ctx) {
-        siblings.put(info.servername(), Pair.of(info, ctx));
-    }
 }

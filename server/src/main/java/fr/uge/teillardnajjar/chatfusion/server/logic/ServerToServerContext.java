@@ -119,7 +119,7 @@ public class ServerToServerContext extends FusionContext implements Context {
 
     public void fusionAccept(ServerInfo info) {
         server.checkServer(info.servername());
-        server.addSibiling(info, this);
+        server.confirmServer(info, this);
     }
 
     public void receiveFusionEnd() {
