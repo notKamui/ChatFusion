@@ -64,9 +64,9 @@ public class ServerToClientContext extends AbstractContext implements Context {
         queuePacket(buffer);
     }
 
-    public void queuePrivFile(IdentifiedFileChunk identifiedFileChunk, ServerToClientContext serverToClientContext) {
-        var unameBuffer = ASCII.encode(serverToClientContext.username);
-        var snameBuffer = ASCII.encode(server.name());
+    public void queuePrivFile(IdentifiedFileChunk identifiedFileChunk, Identifier from) {
+        var unameBuffer = ASCII.encode(from.username());
+        var snameBuffer = ASCII.encode(from.servername());
         var fnameBuffer = UTF8.encode(identifiedFileChunk.filename());
         var chunkBuffer = identifiedFileChunk.chunk().flip();
         var buffer = ByteBuffer.allocate(
@@ -108,7 +108,7 @@ public class ServerToClientContext extends AbstractContext implements Context {
         if (checkIdentity(identifiedFileChunk.identifier())) {
             server.sendPrivFile(identifiedFileChunk, this);
         } else {
-            // TODO
+            server.forward(identifiedFileChunk, this);
         }
     }
 

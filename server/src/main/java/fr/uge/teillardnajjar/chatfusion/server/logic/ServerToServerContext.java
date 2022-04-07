@@ -2,6 +2,7 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
@@ -142,6 +143,18 @@ public class ServerToServerContext extends AbstractContext implements Context {
         queuePacket(buffer);
     }
 
+    public void queuePrivFileFwd(String username, IdentifiedFileChunk chunk) {
+        var unameBuffer = ASCII.encode(username);
+        var chunkBuffer = chunk.toUnflippedBuffer().flip();
+        var buffer = ByteBuffer.allocate(1 + Integer.BYTES + unameBuffer.remaining() + chunkBuffer.remaining())
+            .put(OpCodes.PRIVFILEFWD)
+            .putInt(unameBuffer.remaining())
+            .put(unameBuffer)
+            .put(chunkBuffer)
+            .flip();
+        queuePacket(buffer);
+    }
+
     public void queueMsgFwd(ByteBuffer message) {
         message.flip();
         var buffer = ByteBuffer.allocate(1 + message.remaining())
@@ -155,12 +168,12 @@ public class ServerToServerContext extends AbstractContext implements Context {
         server.broadcast(message);
     }
 
-    public void queueFileChunkFwd(IdentifiedFileChunk identifiedFileChunk) {
-        //TODO
-    }
-
     public void sendPrivMsg(ForwardedIdentifiedMessage message) {
         server.sendPrivMsg(message);
+    }
+
+    public void sendPrivFile(ForwardedIdentifiedFileChunk filechunk) {
+        server.sendPrivFile(filechunk);
     }
 
 

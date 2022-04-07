@@ -2,6 +2,7 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.helper.Helpers;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
@@ -218,8 +219,9 @@ public class Server {
         IdentifiedFileChunk identifiedFileChunk,
         ServerToClientContext serverToClientContext
     ) {
-        connectedUsers.get(identifiedFileChunk.identifier().username())
-            .queuePrivFile(identifiedFileChunk, serverToClientContext);
+        var dest = connectedUsers.get(identifiedFileChunk.identifier().username());
+        if (dest == null) return;
+        dest.queuePrivFile(identifiedFileChunk, new Identifier(serverToClientContext.username(), name));
     }
 
     public String name() {
@@ -372,9 +374,28 @@ public class Server {
         dest.second().queuePrivMsgFwd(message.identifier().username(), fwd);
     }
 
+    public void forward(IdentifiedFileChunk filechunk, ServerToClientContext ctx) {
+        var dest = siblings.get(filechunk.identifier().servername());
+        if (dest == null) return;
+        var fwd = new IdentifiedFileChunk(
+            new Identifier(ctx.username(), name),
+            filechunk.filename(),
+            filechunk.fileSize(),
+            filechunk.fileId(),
+            filechunk.chunk()
+        );
+        dest.second().queuePrivFileFwd(filechunk.identifier().username(), fwd);
+    }
+
     public void sendPrivMsg(ForwardedIdentifiedMessage message) {
         var dest = connectedUsers.get(message.username());
         if (dest == null) return;
         dest.queuePrivMsg(message.message(), message.message().identifier());
+    }
+
+    public void sendPrivFile(ForwardedIdentifiedFileChunk filechunk) {
+        var dest = connectedUsers.get(filechunk.username());
+        if (dest == null) return;
+        dest.queuePrivFile(filechunk.chunk(), filechunk.chunk().identifier());
     }
 }

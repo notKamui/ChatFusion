@@ -8,6 +8,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqAccept;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqDeny;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqFwdA;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.MsgFwd;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivFileFwd;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivMsgFwd;
 
 public class ServerToServerFrameVisitor implements FrameVisitor {
@@ -55,5 +56,10 @@ public class ServerToServerFrameVisitor implements FrameVisitor {
     @Override
     public void visit(PrivMsgFwd frame) {
         ctx.sendPrivMsg(frame.message());
+    }
+
+    @Override
+    public void visit(PrivFileFwd frame) {
+        ctx.sendPrivFile(frame.filechunk());
     }
 }
