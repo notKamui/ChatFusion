@@ -1,6 +1,7 @@
 package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.Fusion;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLink;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReq;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqAccept;
@@ -29,7 +30,7 @@ public class GenericFrameVisitor implements FrameVisitor {
         if (!ctx.serverIsLeader()) {
             System.out.println(">>> Server is not leader, forwarding fusion");
             ctx.forwardFusionReq(frame.info());
-        } else if (ctx.isFusionLocked() || !ctx.checkServers(frame.info())) {
+        } else if (/*ctx.isFusionLocked() ||*/ !ctx.checkServers(frame.info())) {
             ctx.queueFusionReqDeny();
         } else {
             System.out.println(">>> Accepting fusion");
@@ -54,6 +55,11 @@ public class GenericFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(FusionReqAccept frame) {
+        ctx.engageFusion(frame.info());
+    }
+
+    @Override
+    public void visit(Fusion frame) {
         ctx.engageFusion(frame.info());
     }
 }

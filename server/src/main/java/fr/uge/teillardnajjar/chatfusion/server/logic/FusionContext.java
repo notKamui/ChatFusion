@@ -27,6 +27,7 @@ public abstract class FusionContext extends AbstractContext implements Context {
     }
 
     protected void queueFusionReqDeny() {
+        System.out.println(">>> Fusion denied");
         queuePacket(ByteBuffer.allocate(1).put(OpCodes.FUSIONREQDENY).flip());
         closed = true;
         server.wakeup();
@@ -37,7 +38,7 @@ public abstract class FusionContext extends AbstractContext implements Context {
         key.attach(newCtx);
         server.confirmServer(info, newCtx);
         newCtx.queueFusionReqAccept();
-        //server.broadcast(info);
+        server.broadcast(info);
         try {
             newCtx.doWrite();
         } catch (IOException e) {

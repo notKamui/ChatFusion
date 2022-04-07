@@ -246,6 +246,7 @@ public class Server {
 
     public void engageFusion(FusionLockInfo info, ServerToServerContext otherLeader) {
         confirmServer(info, otherLeader);
+        System.out.println("Engaging fusion with " + potentialSiblings.size() + " potential siblings");
         potentialSiblings.forEach(this::link);
     }
 

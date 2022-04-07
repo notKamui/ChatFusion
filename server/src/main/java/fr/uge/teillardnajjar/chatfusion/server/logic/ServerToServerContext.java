@@ -19,6 +19,7 @@ public class ServerToServerContext extends FusionContext implements Context {
     private final static Charset ASCII = StandardCharsets.US_ASCII;
     public final ReqType reqType;
     public final FusionLockInfo fusionLockInfo;
+    public int fuseCount = 0;
 
     public ServerToServerContext(SelectionKey key, Server server, ReqType reqType, FusionLockInfo info) {
         super(key, server);
@@ -93,7 +94,13 @@ public class ServerToServerContext extends FusionContext implements Context {
     }
 
     public void queueFusionLinkAccept() {
-        queuePacket(ByteBuffer.allocate(1).put(OpCodes.FUSIONLINKACCEPT).flip());
+        var snameBuffer = ASCII.encode(server.name());
+        var buffer = ByteBuffer.allocate(1 + Integer.BYTES + snameBuffer.remaining())
+            .put(OpCodes.FUSIONLINKACCEPT)
+            .putInt(snameBuffer.remaining())
+            .put(snameBuffer)
+            .flip();
+        queuePacket(buffer);
         server.checkFusionFinished();
     }
 
@@ -110,12 +117,16 @@ public class ServerToServerContext extends FusionContext implements Context {
         server.engageFusion(info, this);
     }
 
-    public void fusionAccept() {
-        //server.checkServer(name);
+    public void fusionAccept(String name) {
+        server.checkServer(name);
     }
 
     public void receiveFusionEnd() {
-        server.setFusionLock(false);
+        fuseCount++;
+        if (fuseCount >= server.siblings().size()) {
+            server.setFusionLock(false);
+            fuseCount = 0;
+        }
     }
 
     public void queuePrivMsgFwd(String username, IdentifiedMessage message) {
@@ -168,11 +179,12 @@ public class ServerToServerContext extends FusionContext implements Context {
     }
 
     private void fusionResponseAct() {
-        if (isFusionLocked() || !checkServers(fusionLockInfo)) {
+        if (/*isFusionLocked() ||*/ !checkServers(fusionLockInfo)) {
             queueFusionReqDeny();
         } else {
             acceptFusion(fusionLockInfo);
         }
+        acceptFusion(fusionLockInfo);
     }
 
     public void doConnect() throws IOException {
