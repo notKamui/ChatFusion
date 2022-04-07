@@ -1,6 +1,5 @@
 package fr.uge.teillardnajjar.chatfusion.server.logic;
 
-import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedMessage;
@@ -15,21 +14,16 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
-public class ServerToServerContext extends AbstractContext implements Context {
+public class ServerToServerContext extends FusionContext implements Context {
     private final static Charset ASCII = StandardCharsets.US_ASCII;
     public final ReqType reqType;
 
     public ServerToServerContext(SelectionKey key, Server server, ReqType reqType) {
-        super(key);
-        Objects.requireNonNull(server);
-        this.server = server;
+        super(key, server);
         this.reqType = reqType;
         this.setVisitor(new ServerToServerFrameVisitor(this));
     }
-
-    private final Server server;
 
     public void queueFusionReq() {
         var info = server.fusionLockInfo().toBuffer();
@@ -174,34 +168,6 @@ public class ServerToServerContext extends AbstractContext implements Context {
 
     public void sendPrivFile(ForwardedIdentifiedFileChunk filechunk) {
         server.sendPrivFile(filechunk);
-    }
-
-    public boolean isFusionLocked() {
-        return server.isFusionLocked();
-    }
-
-    public boolean checkServers(FusionLockInfo info) {
-        return server.checkServer(info.self().servername()) &&
-            info.siblings().stream().allMatch(s -> server.checkServer(s.servername()));
-    }
-
-    public void queueFusionReqDeny() {
-        queuePacket(ByteBuffer.allocate(1).put(OpCodes.FUSIONREQDENY).flip());
-        closed = true;
-        server.wakeup();
-    }
-
-    public void acceptFusion(FusionLockInfo info) {
-        var newCtx = new ServerToServerContext(key, server, null);
-        key.attach(newCtx);
-        server.confirmServer(info, newCtx);
-        newCtx.queueFusionReqAccept();
-        //server.broadcast(info);
-        try {
-            newCtx.doWrite();
-        } catch (IOException e) {
-            silentlyClose();
-        }
     }
 
     public enum ReqType {FUSIONREQ, FUSIONLINK}

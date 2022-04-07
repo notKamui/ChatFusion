@@ -1,6 +1,5 @@
 package fr.uge.teillardnajjar.chatfusion.server.logic;
 
-import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
@@ -10,12 +9,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-public class GenericContext extends AbstractContext implements Context {
-    private final Server server;
+public class GenericContext extends FusionContext implements Context {
 
     public GenericContext(SelectionKey key, Server server) {
-        super(key);
-        this.server = server;
+        super(key, server);
         this.setVisitor(new GenericFrameVisitor(this));
     }
 
@@ -41,34 +38,6 @@ public class GenericContext extends AbstractContext implements Context {
         queuePacket(ByteBuffer.allocate(1).put(OpCodes.TEMPKO).flip());
         closed = true;
         server.wakeup();
-    }
-
-    public boolean isFusionLocked() {
-        return server.isFusionLocked();
-    }
-
-    public void queueFusionReqDeny() {
-        queuePacket(ByteBuffer.allocate(1).put(OpCodes.FUSIONREQDENY).flip());
-        closed = true;
-        server.wakeup();
-    }
-
-    public boolean checkServers(FusionLockInfo info) {
-        return server.checkServer(info.self().servername()) &&
-            info.siblings().stream().allMatch(s -> server.checkServer(s.servername()));
-    }
-
-    public void acceptFusion(FusionLockInfo info) {
-        var newCtx = new ServerToServerContext(key, server, null);
-        key.attach(newCtx);
-        server.confirmServer(info, newCtx);
-        newCtx.queueFusionReqAccept();
-        //server.broadcast(info);
-        try {
-            newCtx.doWrite();
-        } catch (IOException e) {
-            silentlyClose();
-        }
     }
 
     public boolean serverIsLeader() {

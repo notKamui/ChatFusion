@@ -153,6 +153,7 @@ public class FrameReader implements Reader<Frame> {
     }
 
     private ProcessStatus processOpcode(ByteBuffer buffer) {
+        System.out.println(">>> Received opcode : " + Integer.toHexString(opcode));
         Pair<Frame, ProcessStatus> proc = switch (opcode) {
             case TEMP -> processPayload(buffer, asciiReader, Temp::new);
             case TEMPOK -> processNullPayload(buffer, TempOk::new);
