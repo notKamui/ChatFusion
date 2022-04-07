@@ -3,6 +3,7 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.Inet;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
@@ -106,6 +107,10 @@ public class ServerToServerContext extends AbstractContext implements Context {
         server.engageFusion(info, this);
     }
 
+    public void fusionAccept() {
+        //server.checkServer(name);
+    }
+
     public void doConnect() throws IOException {
         if (!sc.finishConnect()) {
             LOGGER.warning("Selector lied");
@@ -119,5 +124,26 @@ public class ServerToServerContext extends AbstractContext implements Context {
         }
     }
 
-    public enum ReqType {FUSIONREQ, FUSIONLINK;}
+    public void receiveFusionEnd() {
+        server.setFusionLock(false);
+    }
+
+    public void queuePrivMsgFwd(IdentifiedMessage message) {
+    }
+
+    public void queueMsgFwd(ByteBuffer message) {
+        message.flip();
+        var buffer = ByteBuffer.allocate(1 + message.remaining())
+            .put(OpCodes.MSGFWD)
+            .put(message)
+            .flip();
+        queuePacket(buffer);
+    }
+
+    public void broadcast(IdentifiedMessage message) {
+        server.broadcast(message);
+    }
+
+
+    public enum ReqType {FUSIONREQ, FUSIONLINK}
 }

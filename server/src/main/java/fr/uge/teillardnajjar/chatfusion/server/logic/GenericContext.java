@@ -47,10 +47,6 @@ public class GenericContext extends AbstractContext implements Context {
         return server.isFusionLocked();
     }
 
-    public void setFusionLock(boolean locked) {
-        server.setFusionLock(locked);
-    }
-
     public void queueFusionReqDeny() {
         queuePacket(ByteBuffer.allocate(1).put(OpCodes.FUSIONREQDENY).flip());
         closed = true;
@@ -67,7 +63,7 @@ public class GenericContext extends AbstractContext implements Context {
         key.attach(newCtx);
         server.confirmServer(info, newCtx);
         newCtx.queueFusionReqAccept();
-        server.broadcast(info);
+        //server.broadcast(info);
         try {
             newCtx.doWrite();
         } catch (IOException e) {

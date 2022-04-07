@@ -15,10 +15,11 @@ public record FusionLockInfo(
 
     public ByteBuffer toBuffer() {
         var self = this.self.toBuffer();
-        var sibBuffers = siblings.stream().map(ServerInfo::toBuffer);
-        var sibsTotalSize = sibBuffers.mapToInt(ByteBuffer::remaining).sum();
+        var sibBuffers = siblings.stream().map(ServerInfo::toBuffer).toList();
+        var sibsTotalSize = sibBuffers.stream().mapToInt(ByteBuffer::remaining).sum();
         ByteBuffer buffer = ByteBuffer.allocate(self.remaining() + Integer.BYTES + sibsTotalSize);
         buffer.put(self).putInt(siblings.size());
+        sibBuffers.forEach(buffer::put);
         sibBuffers.forEach(buffer::put);
         buffer.flip();
         return buffer;

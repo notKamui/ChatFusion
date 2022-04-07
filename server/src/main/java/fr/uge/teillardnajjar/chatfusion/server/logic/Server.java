@@ -12,7 +12,6 @@ import fr.uge.teillardnajjar.chatfusion.server.command.CommandParser;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
@@ -170,7 +169,7 @@ public class Server {
         connectedUsers.remove(username);
     }
 
-    public void broadcast(String message, ServerToClientContext ctx) {
+    public void broadcast(String message, ServerToClientContext ctx, boolean forward) {
         var messageResp = ctx.buildMessageResp(message);
         selector.keys().stream()
             .filter(SelectionKey::isValid)
@@ -180,7 +179,22 @@ public class Server {
                 if (ctx == octx) return;
                 octx.queueMessageResp(messageResp);
             });
-        // TODO forward
+        if (forward) {
+            siblings.values().stream()
+                .map(Pair::second)
+                .forEach(dctx -> dctx.queueMsgFwd(messageResp));
+        }
+    }
+
+    public void broadcast(IdentifiedMessage message) {
+        var messageResp = message.toUnflippedBuffer();
+        selector.keys().stream()
+            .filter(SelectionKey::isValid)
+            .filter(k -> k.attachment() instanceof ServerToClientContext)
+            .forEach(k -> {
+                var octx = (ServerToClientContext) k.attachment();
+                octx.queueMessageResp(messageResp);
+            });
     }
 
     public void broadcast(FusionLockInfo info) {
@@ -236,8 +250,10 @@ public class Server {
         if (otherLeader.servername().compareTo(toCompare) < 0) {
             leader = otherLeader;
         }
-        siblings.put(info.self().servername(), Pair.of(otherLeader, otherLeaderCtx));
-        potentialSiblings.addAll(info.siblings());
+        if (!info.self().servername().equals(name)) {
+            siblings.put(info.self().servername(), Pair.of(otherLeader, otherLeaderCtx));
+        }
+        potentialSiblings.addAll(info.siblings().stream().filter(s -> !s.servername().equals(name)).toList());
         setFusionLock(true);
     }
 
@@ -255,7 +271,7 @@ public class Server {
 
     public ServerInfo info() {
         if (info != null) return info;
-        var ip = address().getAddress().getAddress();
+        var ip = address().getAddress();
         info = new ServerInfo(name, ip, (short) isa.getPort());
         return info;
     }
@@ -331,7 +347,7 @@ public class Server {
             var key = sc.register(selector, SelectionKey.OP_CONNECT);
             var ctx = new ServerToServerContext(key, this, ServerToServerContext.ReqType.FUSIONLINK);
             key.attach(ctx);
-            var hname = InetAddress.getByAddress(serverInfo.ip());
+            var hname = serverInfo.ip();
             var otherAddress = new InetSocketAddress(hname, serverInfo.port());
             sc.connect(otherAddress);
         } catch (IOException e) {
@@ -341,5 +357,9 @@ public class Server {
 
     public void forwardFusionReq(FusionLockInfo info) {
         siblings.get(leader.servername()).second().queueFusionReqFwdB(info);
+    }
+
+    public void forward(IdentifiedMessage message) {
+        siblings.values().stream().map(Pair::second).forEach(ctx -> ctx.queuePrivMsgFwd(message));
     }
 }

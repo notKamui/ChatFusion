@@ -116,7 +116,8 @@ public class FrameReader implements Reader<Frame> {
     ) {
         if (!popped) {
             popped = true;
-            buffer.get();
+            var a = buffer.get();
+            System.out.println("POP " + Integer.toHexString(a));
         }
         return processPayload(buffer, reader, generator);
     }
@@ -157,7 +158,7 @@ public class FrameReader implements Reader<Frame> {
 
             case MSG -> processPayload(buffer, utf8Reader, Msg::new);
             case MSGRESP -> processIMPayload(buffer, MsgResp::new);
-            case MSGFWD -> processPayloadWithPop(buffer, imReader, MsgFwd::new);
+            case MSGFWD -> processIMPayload(buffer, MsgFwd::new);
 
             case PRIVMSG -> processIMPayload(buffer, PrivMsg::new);
             case PRIVMSGRESP -> processIMPayload(buffer, PrivMsgResp::new);
@@ -180,6 +181,7 @@ public class FrameReader implements Reader<Frame> {
 
             default -> Pair.of(null, ERROR);
         };
+        System.out.println("opcode: " + Integer.toHexString(opcode));
         if (proc.second() == DONE) {
             value = proc.first();
             state = State.DONE;

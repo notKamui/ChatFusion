@@ -23,7 +23,7 @@ public class CommandParser {
         if (parts.length != 3) return null;
         short port;
         try {
-            port = Short.parseShort(parts[1]);
+            port = Short.parseShort(parts[2]);
         } catch (NumberFormatException e) {
             return null;
         }

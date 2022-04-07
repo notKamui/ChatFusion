@@ -1,12 +1,13 @@
 package fr.uge.teillardnajjar.chatfusion.core.model.parts;
 
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public record ServerInfo(
     String servername,
-    byte[] ip,
+    InetAddress ip,
     short port
 ) {
     public ServerInfo {
@@ -16,6 +17,7 @@ public record ServerInfo(
 
     public ByteBuffer toBuffer() {
         byte type;
+        var ip = this.ip.getAddress();
         if (ip.length == 4) type = 0;
         else if (ip.length == 16) type = 1;
         else throw new IllegalArgumentException("ip must be 4 or 16 bytes long");

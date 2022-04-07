@@ -17,7 +17,7 @@ public abstract class AbstractContext implements Context {
 
     protected final static Logger LOGGER = Logger.getLogger(AbstractContext.class.getName());
     private final static int BUFFER_SIZE = 32_768;
-    protected final SelectionKey key;
+    public final SelectionKey key;
     protected final SocketChannel sc;
     protected final ByteBuffer bin;
     protected final ByteBuffer bout;
@@ -64,6 +64,7 @@ public abstract class AbstractContext implements Context {
     @Override
     public void updateInterestOps() {
         int interestOps = 0;
+        if (closed) System.out.println("AAAAAAAAAAAAAAAAa");
         if (!closed && bin.hasRemaining()) {
             interestOps |= SelectionKey.OP_READ;
         }
