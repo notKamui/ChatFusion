@@ -2,9 +2,11 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.helper.Helpers;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.Identifier;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
 import fr.uge.teillardnajjar.chatfusion.core.util.Pair;
 import fr.uge.teillardnajjar.chatfusion.core.util.concurrent.Pipe;
@@ -207,8 +209,9 @@ public class Server {
         IdentifiedMessage message,
         ServerToClientContext serverToClientContext
     ) {
-        connectedUsers.get(message.identifier().username())
-            .queuePrivMsg(message, serverToClientContext);
+        var dest = connectedUsers.get(message.identifier().username());
+        if (dest == null) return;
+        dest.queuePrivMsg(message, new Identifier(serverToClientContext.username(), name));
     }
 
     public void sendPrivFile(
@@ -359,7 +362,19 @@ public class Server {
         siblings.get(leader.servername()).second().queueFusionReqFwdB(info);
     }
 
-    public void forward(IdentifiedMessage message) {
-        siblings.values().stream().map(Pair::second).forEach(ctx -> ctx.queuePrivMsgFwd(message));
+    public void forward(IdentifiedMessage message, ServerToClientContext ctx) {
+        var dest = siblings.get(message.identifier().servername());
+        if (dest == null) return;
+        var fwd = new IdentifiedMessage(
+            new Identifier(ctx.username(), name),
+            message.message()
+        );
+        dest.second().queuePrivMsgFwd(message.identifier().username(), fwd);
+    }
+
+    public void sendPrivMsg(ForwardedIdentifiedMessage message) {
+        var dest = connectedUsers.get(message.username());
+        if (dest == null) return;
+        dest.queuePrivMsg(message.message(), message.message().identifier());
     }
 }

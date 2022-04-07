@@ -139,7 +139,7 @@ Summary
 
    The server must also transmit this packet to all of its sibling 
    server (fused servers). For that, it will send them the exact same 
-   packet, prepended by the OpCode "MSGFWD" (0x12).
+   packet (minus the opcode), prepended by the OpCode "MSGFWD" (0x12).
 
     1 byte     x bytes
     ------------------------
@@ -196,13 +196,15 @@ Summary
         ----------------------
 
    However, if the server name corresponds to a server that is not
-   itself, but one of its siblings, the packet will be sent to said 
-   sibling, prepended by the OpCode "PRIVMSGFWD" (0x22).
+   itself, but one of its siblings, the packet (minus the opcode)
+   will be sent to said sibling, prepended by the OpCode
+   "PRIVMSGFWD" (0x22), followed by a 4 bytes integer representing
+   the length of the username of the recipient, followed by it.
 
-    1 byte       x bytes
-    ----------------------------
-   | 0x22 |  PRIVMSGRESP packet |
-    ----------------------------
+    1 byte  4 bytes    n bytes          x bytes
+    -------------------------------------------------
+   | 0x22 | size n | r_username | PRIVMSGRESP packet |
+    -------------------------------------------------
 
    Once a server receives a PRIVMSGFWD packet, it must send the content
    of it to the corresponding client.
@@ -260,8 +262,9 @@ Summary
         -------------------------------------------------------------
 
    However, if the server name corresponds to a server that is not
-   itself, but one of its siblings, the packet will be sent to said
-   sibling, prepended by the OpCode "PRIVFILEFWD" (0x32).
+   itself, but one of its siblings, the packet (minus the opcode)
+   will be sent to said sibling, prepended by the OpCode
+   "PRIVFILEFWD" (0x32).
 
     1 byte       x bytes
     -----------------------------

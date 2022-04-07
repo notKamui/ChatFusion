@@ -49,9 +49,9 @@ public class ServerToClientContext extends AbstractContext implements Context {
         queuePacket(buffer);
     }
 
-    public void queuePrivMsg(IdentifiedMessage message, ServerToClientContext serverToClientContext) {
-        var unameBuffer = ASCII.encode(serverToClientContext.username);
-        var snameBuffer = ASCII.encode(server.name());
+    public void queuePrivMsg(IdentifiedMessage message, Identifier from) {
+        var unameBuffer = ASCII.encode(from.username());
+        var snameBuffer = ASCII.encode(from.servername());
         var msgBuffer = UTF8.encode(message.message());
         var buffer = ByteBuffer.allocate(1 + Integer.BYTES * 2 + 5 + unameBuffer.remaining() + msgBuffer.remaining());
         buffer.put(OpCodes.PRIVMSGRESP)
@@ -99,7 +99,7 @@ public class ServerToClientContext extends AbstractContext implements Context {
         if (checkIdentity(message.identifier())) {
             server.sendPrivMsg(message, this);
         } else {
-            server.forward(message);
+            server.forward(message, this);
         }
     }
 
@@ -108,7 +108,11 @@ public class ServerToClientContext extends AbstractContext implements Context {
         if (checkIdentity(identifiedFileChunk.identifier())) {
             server.sendPrivFile(identifiedFileChunk, this);
         } else {
-            // TODO server.forward(identifiedFileChunk, this);
+            // TODO
         }
+    }
+
+    public String username() {
+        return username;
     }
 }

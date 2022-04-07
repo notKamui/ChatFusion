@@ -2,7 +2,9 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.Inet;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
@@ -128,7 +130,16 @@ public class ServerToServerContext extends AbstractContext implements Context {
         server.setFusionLock(false);
     }
 
-    public void queuePrivMsgFwd(IdentifiedMessage message) {
+    public void queuePrivMsgFwd(String username, IdentifiedMessage message) {
+        var unameBuffer = ASCII.encode(username);
+        var msgBuffer = message.toUnflippedBuffer().flip();
+        var buffer = ByteBuffer.allocate(1 + Integer.BYTES + unameBuffer.remaining() + msgBuffer.remaining())
+            .put(OpCodes.PRIVMSGFWD)
+            .putInt(unameBuffer.remaining())
+            .put(unameBuffer)
+            .put(msgBuffer)
+            .flip();
+        queuePacket(buffer);
     }
 
     public void queueMsgFwd(ByteBuffer message) {
@@ -142,6 +153,14 @@ public class ServerToServerContext extends AbstractContext implements Context {
 
     public void broadcast(IdentifiedMessage message) {
         server.broadcast(message);
+    }
+
+    public void queueFileChunkFwd(IdentifiedFileChunk identifiedFileChunk) {
+        //TODO
+    }
+
+    public void sendPrivMsg(ForwardedIdentifiedMessage message) {
+        server.sendPrivMsg(message);
     }
 
 

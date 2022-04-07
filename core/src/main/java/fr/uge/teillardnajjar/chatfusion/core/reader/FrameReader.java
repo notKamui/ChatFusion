@@ -62,6 +62,7 @@ public class FrameReader implements Reader<Frame> {
     private final StringReader asciiReader = new StringReader(StandardCharsets.US_ASCII);
     private final StringReader utf8Reader = new StringReader(StandardCharsets.UTF_8);
     private final IdentifiedMessageReader imReader = new IdentifiedMessageReader();
+    private final ForwardedIdentifiedMessageReader fimReader = new ForwardedIdentifiedMessageReader();
     private final IdentifiedFileChunkReader ifReader = new IdentifiedFileChunkReader();
     private final FusionLockInfoReader fliReader = new FusionLockInfoReader();
     private final InetReader inetReader = new InetReader();
@@ -162,7 +163,7 @@ public class FrameReader implements Reader<Frame> {
 
             case PRIVMSG -> processIMPayload(buffer, PrivMsg::new);
             case PRIVMSGRESP -> processIMPayload(buffer, PrivMsgResp::new);
-            case PRIVMSGFWD -> processPayloadWithPop(buffer, imReader, PrivMsgFwd::new);
+            case PRIVMSGFWD -> processPayload(buffer, fimReader, PrivMsgFwd::new);
 
             case PRIVFILE -> processIFPayload(buffer, PrivFile::new);
             case PRIVFILERESP -> processIFPayload(buffer, PrivFileResp::new);
