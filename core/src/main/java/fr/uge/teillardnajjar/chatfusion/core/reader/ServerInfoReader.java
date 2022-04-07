@@ -1,6 +1,7 @@
 package fr.uge.teillardnajjar.chatfusion.core.reader;
 
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
+import fr.uge.teillardnajjar.chatfusion.core.util.Conversions;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -18,9 +19,7 @@ public class ServerInfoReader implements Reader<ServerInfo> {
     private final ByteBuffer typeBuffer = ByteBuffer.allocate(1);
     private State state = State.WAITING_SERVERNAME;
     private String servername;
-    private ServerInfo.Type type;
-    private int ipv4;
-    private byte[] ipv6 = new byte[16];
+    private byte[] ip;
     private short port;
 
     @Override
@@ -48,7 +47,7 @@ public class ServerInfoReader implements Reader<ServerInfo> {
             status = REFILL;
             if (!typeBuffer.hasRemaining()) {
                 typeBuffer.flip();
-                type = ServerInfo.Type.values()[typeBuffer.get()];
+                var type = ServerInfo.Type.values()[typeBuffer.get()];
                 typeBuffer.clear();
                 if (type == ServerInfo.Type.IPv4) {
                     state = State.WAITING_IPv4;
@@ -64,7 +63,7 @@ public class ServerInfoReader implements Reader<ServerInfo> {
         if (state == State.WAITING_IPv4) {
             status = intReader.process(buffer);
             if (status == DONE) {
-                ipv4 = intReader.get();
+                ip = Conversions.toByteArray(intReader.get());
                 state = State.WAITING_PORT;
             }
         }
@@ -72,7 +71,7 @@ public class ServerInfoReader implements Reader<ServerInfo> {
         if (state == State.WAITING_IPv6) {
             status = int16BReader.process(buffer);
             if (status == DONE) {
-                ipv6 = int16BReader.get();
+                ip = int16BReader.get();
                 state = State.WAITING_PORT;
             }
         }
@@ -98,16 +97,14 @@ public class ServerInfoReader implements Reader<ServerInfo> {
         if (state != State.DONE) {
             throw new IllegalStateException();
         }
-        return new ServerInfo(servername, type, ipv4, ipv6, port);
+        return new ServerInfo(servername, ip, port);
     }
 
     @Override
     public void reset() {
         state = State.WAITING_SERVERNAME;
         servername = null;
-        type = null;
-        ipv4 = 0;
-        ipv6 = new byte[16];
+        ip = null;
         port = 0;
         intReader.reset();
         int16BReader.reset();

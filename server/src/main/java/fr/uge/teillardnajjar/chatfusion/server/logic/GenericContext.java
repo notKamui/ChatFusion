@@ -39,8 +39,8 @@ public class GenericContext extends AbstractContext implements Context {
     public void refuseUser() {
         LOGGER.info("Refusing user");
         queuePacket(ByteBuffer.allocate(1).put(OpCodes.TEMPKO).flip());
-        server.wakeup();
         closed = true;
+        server.wakeup();
     }
 
     public boolean isFusionLocked() {
@@ -63,10 +63,11 @@ public class GenericContext extends AbstractContext implements Context {
     }
 
     public void acceptFusion(FusionLockInfo info) {
-        var newCtx = new ServerToServerContext(key, server);
+        var newCtx = new ServerToServerContext(key, server, null);
         key.attach(newCtx);
         server.confirmServer(info, newCtx);
         newCtx.queueFusionReqAccept();
+        server.broadcast(info);
         try {
             newCtx.doWrite();
         } catch (IOException e) {
@@ -88,7 +89,7 @@ public class GenericContext extends AbstractContext implements Context {
     }
 
     public void acceptLink(ServerInfo info) {
-        var newCtx = new ServerToServerContext(key, server);
+        var newCtx = new ServerToServerContext(key, server, null);
         key.attach(newCtx);
         server.confirmServer(info, newCtx);
         newCtx.queueFusionLinkAccept();
@@ -97,5 +98,10 @@ public class GenericContext extends AbstractContext implements Context {
         } catch (IOException e) {
             silentlyClose();
         }
+    }
+
+    public void forwardFusionReq(FusionLockInfo info) {
+        server.forwardFusionReq(info);
+        closed = true;
     }
 }

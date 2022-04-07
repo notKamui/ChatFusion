@@ -22,7 +22,6 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivMsgResp;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Temp;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.TempKo;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.TempOk;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedFusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
@@ -32,7 +31,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSION;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONEND;
@@ -60,14 +58,13 @@ import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class FrameReader implements Reader<Frame> {
-    private final static Logger LOGGER = Logger.getLogger(FrameReader.class.getName());
 
     private final StringReader asciiReader = new StringReader(StandardCharsets.US_ASCII);
     private final StringReader utf8Reader = new StringReader(StandardCharsets.UTF_8);
     private final IdentifiedMessageReader imReader = new IdentifiedMessageReader();
     private final IdentifiedFileChunkReader ifReader = new IdentifiedFileChunkReader();
     private final FusionLockInfoReader fliReader = new FusionLockInfoReader();
-    private final ForwardedFusionLockInfoReader ffliReader = new ForwardedFusionLockInfoReader();
+    private final InetReader inetReader = new InetReader();
     private final ServerInfoReader siReader = new ServerInfoReader();
     private final ByteBuffer opcodeBuffer = ByteBuffer.allocate(1);
     private State state = State.WAITING_OPCODE;
@@ -152,13 +149,6 @@ public class FrameReader implements Reader<Frame> {
         return processPayload(buffer, fliReader, generator);
     }
 
-    private Pair<Frame, ProcessStatus> processFFLIPayload(
-        ByteBuffer buffer,
-        Function<ForwardedFusionLockInfo, Frame> generator
-    ) {
-        return processPayload(buffer, ffliReader, generator);
-    }
-
     private ProcessStatus processOpcode(ByteBuffer buffer) {
         Pair<Frame, ProcessStatus> proc = switch (opcode) {
             case TEMP -> processPayload(buffer, asciiReader, Temp::new);
@@ -178,10 +168,10 @@ public class FrameReader implements Reader<Frame> {
             case PRIVFILEFWD -> processPayloadWithPop(buffer, ifReader, PrivFileFwd::new);
 
             case FUSIONREQ -> processFLIPayload(buffer, FusionReq::new);
-            case FUSIONREQFWDA -> processFFLIPayload(buffer, FusionReqFwdA::new);
+            case FUSIONREQFWDA -> processPayload(buffer, inetReader, FusionReqFwdA::new);
             case FUSIONREQDENY -> processNullPayload(buffer, FusionReqDeny::new);
             case FUSIONREQACCEPT -> processFLIPayload(buffer, FusionReqAccept::new);
-            case FUSIONREQFWDB -> processFFLIPayload(buffer, FusionReqFwdB::new);
+            case FUSIONREQFWDB -> processFLIPayload(buffer, FusionReqFwdB::new);
 
             case FUSION -> processPayloadWithPop(buffer, fliReader, Fusion::new);
             case FUSIONLINK -> processPayload(buffer, siReader, FusionLink::new);
@@ -217,7 +207,6 @@ public class FrameReader implements Reader<Frame> {
         imReader.reset();
         ifReader.reset();
         fliReader.reset();
-        ffliReader.reset();
         siReader.reset();
     }
 

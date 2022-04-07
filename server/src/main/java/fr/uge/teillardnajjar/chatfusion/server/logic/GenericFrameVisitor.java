@@ -25,7 +25,7 @@ public class GenericFrameVisitor implements FrameVisitor {
     @Override
     public void visit(FusionReq frame) {
         if (!ctx.serverIsLeader()) {
-            // TODO forward to leader
+            ctx.forwardFusionReq(frame.info());
         } else if (ctx.isFusionLocked() || !ctx.checkServers(frame.info())) {
             ctx.queueFusionReqDeny();
         } else {

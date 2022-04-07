@@ -325,13 +325,15 @@ Summary
 
       - sA is NOT the leader of nA ; in which case, it must forward the
       packet to the leader of nA, with a packet containing the OpCode
-      "FUSIONREQFWDA" (0x41), and the server info of sB, followed by
-      the FUSIONREQ packet.
+      "FUSIONREQFWDA" (0x41), and a 4 bytes integer representing the
+      length of the sB's hostname, followed by said hostname, followed
+      by a 2 bytes integer representing the port to which to connect
+      to sB.
 
-       1 byte      x bytes           y bytes
-       --------------------------------------------
-      | 0x41 |  sB server info  | FUSIONREQ packet |
-       --------------------------------------------
+       1 byte  4 bytes      n bytes    2 bytes
+       ----------------------------------------
+      | 0x41 |  size n  | sB hostname |  port  |
+       ----------------------------------------
 
       Once the leader of sA receives the FUSIONREQFWDA packet, it must
       fall back to the first case scenario.
@@ -370,13 +372,13 @@ Summary
 
       - sB is NOT the leader of nB; in which case, it must forward the
       packet to the leader of nB, with a packet containing the OpCode
-      "FUSIONREQFWDB" (0x44), and the server info of the leader of nA,
-      followed by the FUSIONREQ packet to the leader of nB.
+      "FUSIONREQFWDB" (0x44), followed by the FUSIONREQ packet to the
+      leader of nB.
 
-       1 byte      x bytes                 y bytes
-       ---------------------------------------------------
-      | 0x44 |  nA leader server info  | FUSIONREQ packet |
-       ---------------------------------------------------
+       1 byte      x  bytes
+       -------------------------
+      | 0x44 | FUSIONREQ packet |
+       -------------------------
 
       Once the leader of nB receives the FUSIONREQFWDB packet, it must
       fall back to the first case scenario.
