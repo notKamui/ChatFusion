@@ -7,6 +7,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.parts.Inet;
+import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.io.IOException;
@@ -94,11 +95,10 @@ public class ServerToServerContext extends FusionContext implements Context {
     }
 
     public void queueFusionLinkAccept() {
-        var snameBuffer = ASCII.encode(server.name());
-        var buffer = ByteBuffer.allocate(1 + Integer.BYTES + snameBuffer.remaining())
+        var info = server.info().toBuffer();
+        var buffer = ByteBuffer.allocate(1 + info.remaining())
             .put(OpCodes.FUSIONLINKACCEPT)
-            .putInt(snameBuffer.remaining())
-            .put(snameBuffer)
+            .put(info)
             .flip();
         queuePacket(buffer);
         server.checkFusionFinished();
@@ -117,8 +117,9 @@ public class ServerToServerContext extends FusionContext implements Context {
         server.engageFusion(info, this);
     }
 
-    public void fusionAccept(String name) {
-        server.checkServer(name);
+    public void fusionAccept(ServerInfo info) {
+        server.checkServer(info.servername());
+        server.addSibiling(info, this);
     }
 
     public void receiveFusionEnd() {

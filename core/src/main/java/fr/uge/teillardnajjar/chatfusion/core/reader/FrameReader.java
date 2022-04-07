@@ -178,7 +178,7 @@ public class FrameReader implements Reader<Frame> {
 
             case FUSION -> processPayload(buffer, fliReader, Fusion::new);
             case FUSIONLINK -> processPayload(buffer, siReader, FusionLink::new);
-            case FUSIONLINKACCEPT -> processPayload(buffer, asciiReader, FusionLinkAccept::new);
+            case FUSIONLINKACCEPT -> processPayload(buffer, siReader, FusionLinkAccept::new);
             case FUSIONEND -> processNullPayload(buffer, FusionEnd::new);
 
             default -> Pair.of(null, ERROR);

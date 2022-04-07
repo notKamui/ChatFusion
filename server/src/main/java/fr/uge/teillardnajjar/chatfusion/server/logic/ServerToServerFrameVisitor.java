@@ -46,7 +46,7 @@ public class ServerToServerFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(FusionLinkAccept frame) {
-        ctx.fusionAccept(frame.name());
+        ctx.fusionAccept(frame.info());
     }
 
     @Override
