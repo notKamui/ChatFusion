@@ -139,7 +139,7 @@ Summary
 
    The server must also transmit this packet to all of its sibling 
    server (fused servers). For that, it will send them the exact same 
-   packet, prepended by the OpCode "MSGFWD" (0x12).
+   packet (minus the opcode), prepended by the OpCode "MSGFWD" (0x12).
 
     1 byte     x bytes
     ------------------------
@@ -196,13 +196,15 @@ Summary
         ----------------------
 
    However, if the server name corresponds to a server that is not
-   itself, but one of its siblings, the packet will be sent to said 
-   sibling, prepended by the OpCode "PRIVMSGFWD" (0x22).
+   itself, but one of its siblings, the packet (minus the opcode)
+   will be sent to said sibling, prepended by the OpCode
+   "PRIVMSGFWD" (0x22), followed by a 4 bytes integer representing
+   the length of the username of the recipient, followed by it.
 
-    1 byte       x bytes
-    ----------------------------
-   | 0x22 |  PRIVMSGRESP packet |
-    ----------------------------
+    1 byte  4 bytes    n bytes          x bytes
+    -------------------------------------------------
+   | 0x22 | size n | r_username | PRIVMSGRESP packet |
+    -------------------------------------------------
 
    Once a server receives a PRIVMSGFWD packet, it must send the content
    of it to the corresponding client.
@@ -219,7 +221,7 @@ Summary
    , followed by the name of the server the recipient is on encoded in 
    ASCII over 5 bytes, followed by a 4 bytes integer representing the 
    length of the file name encoded in UTF-8, followed by said file name
-   , followed by a 4 bytes integer representing the size of the whole 
+   , followed by an 8 bytes integer representing the size of the whole
    file, followed by a 4 bytes integer representing the file id, 
    followed by a 4 bytes integer representing the size of the chunk, 
    followed by the chunk.
@@ -229,7 +231,7 @@ Summary
    | 0x30 |  size n  | r_username | r_servername | ...
     ---------------------------------------------
 
-   ...   4 bytes     q bytes    4 bytes    4 bytes   4 bytes  r bytes
+   ...   4 bytes     q bytes    8 bytes    4 bytes   4 bytes  r bytes
         -------------------------------------------------------------
    ... |  size q  | file name | file size | file id | size r | chunk |
         -------------------------------------------------------------
@@ -244,7 +246,7 @@ Summary
    ASCII, followed by said username, followed by the name of the server
    of the sender encoded in ASCII over 5 bytes, followed by a 4 bytes 
    integer representing the length of the file name encoded in UTF-8, 
-   followed by said file name, followed by a 4 bytes integer 
+   followed by said file name, followed by an 8 bytes integer
    representing the size of the whole file, followed by a 4 bytes 
    integer representing the file id, followed by a 4 bytes integer 
    representing the size of the chunk, followed by the chunk.
@@ -254,14 +256,15 @@ Summary
    | 0x31 |  size n  | s_username | s_servername | ...
     ---------------------------------------------
 
-   ...   4 bytes     q bytes    4 bytes    4 bytes   4 bytes  r bytes
+   ...   4 bytes     q bytes    8 bytes    4 bytes   4 bytes  r bytes
         -------------------------------------------------------------
    ... |  size q  | file name | file size | file id | size r | chunk |
         -------------------------------------------------------------
 
    However, if the server name corresponds to a server that is not
-   itself, but one of its siblings, the packet will be sent to said
-   sibling, prepended by the OpCode "PRIVFILEFWD" (0x32).
+   itself, but one of its siblings, the packet (minus the opcode)
+   will be sent to said sibling, prepended by the OpCode
+   "PRIVFILEFWD" (0x32).
 
     1 byte       x bytes
     -----------------------------
@@ -325,13 +328,15 @@ Summary
 
       - sA is NOT the leader of nA ; in which case, it must forward the
       packet to the leader of nA, with a packet containing the OpCode
-      "FUSIONREQFWDA" (0x41), and the server info of sB, followed by
-      the FUSIONREQ packet.
+      "FUSIONREQFWDA" (0x41), and a 4 bytes integer representing the
+      length of the sB's hostname, followed by said hostname, followed
+      by a 2 bytes integer representing the port to which to connect
+      to sB.
 
-       1 byte      x bytes           y bytes
-       --------------------------------------------
-      | 0x41 |  sB server info  | FUSIONREQ packet |
-       --------------------------------------------
+       1 byte  4 bytes      n bytes    2 bytes
+       ----------------------------------------
+      | 0x41 |  size n  | sB hostname |  port  |
+       ----------------------------------------
 
       Once the leader of sA receives the FUSIONREQFWDA packet, it must
       fall back to the first case scenario.
@@ -370,13 +375,13 @@ Summary
 
       - sB is NOT the leader of nB; in which case, it must forward the
       packet to the leader of nB, with a packet containing the OpCode
-      "FUSIONREQFWDB" (0x44), and the server info of the leader of nA,
-      followed by the FUSIONREQ packet to the leader of nB.
+      "FUSIONREQFWDB" (0x44), followed by the FUSIONREQ packet to the
+      leader of nB.
 
-       1 byte      x bytes                 y bytes
-       ---------------------------------------------------
-      | 0x44 |  nA leader server info  | FUSIONREQ packet |
-       ---------------------------------------------------
+       1 byte      x  bytes
+       -------------------------
+      | 0x44 | FUSIONREQ packet |
+       -------------------------
 
       Once the leader of nB receives the FUSIONREQFWDB packet, it must
       fall back to the first case scenario.
