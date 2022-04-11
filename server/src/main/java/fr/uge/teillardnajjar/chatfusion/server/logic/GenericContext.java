@@ -1,8 +1,8 @@
 package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.FusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.ServerInfo;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.io.IOException;

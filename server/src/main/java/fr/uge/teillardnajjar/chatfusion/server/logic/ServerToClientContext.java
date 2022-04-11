@@ -2,9 +2,9 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.Identifier;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.Identifier;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.nio.ByteBuffer;

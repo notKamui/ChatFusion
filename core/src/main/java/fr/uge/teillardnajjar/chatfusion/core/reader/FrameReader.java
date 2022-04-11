@@ -22,13 +22,21 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivMsgResp;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Temp;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.TempKo;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.TempOk;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.FusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.reader.part.ForwardedIdentifiedFileChunkReader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.part.ForwardedIdentifiedMessageReader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.part.FusionLockInfoReader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.part.IdentifiedFileChunkReader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.part.IdentifiedMessageReader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.part.InetReader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.part.ServerInfoReader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.primitive.ByteReader;
+import fr.uge.teillardnajjar.chatfusion.core.reader.sized.StringReader;
 import fr.uge.teillardnajjar.chatfusion.core.util.Pair;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -55,12 +63,11 @@ import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.TEMPKO;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.TEMPOK;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.DONE;
 import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.ERROR;
-import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.REFILL;
 
 public class FrameReader implements Reader<Frame> {
 
-    private final StringReader asciiReader = new StringReader(StandardCharsets.US_ASCII);
-    private final StringReader utf8Reader = new StringReader(StandardCharsets.UTF_8);
+    private final StringReader asciiReader = StringReader.ascii();
+    private final StringReader utf8Reader = StringReader.utf8();
     private final IdentifiedMessageReader imReader = new IdentifiedMessageReader();
     private final ForwardedIdentifiedMessageReader fimReader = new ForwardedIdentifiedMessageReader();
     private final ForwardedIdentifiedFileChunkReader fifReader = new ForwardedIdentifiedFileChunkReader();
@@ -68,9 +75,9 @@ public class FrameReader implements Reader<Frame> {
     private final FusionLockInfoReader fliReader = new FusionLockInfoReader();
     private final InetReader inetReader = new InetReader();
     private final ServerInfoReader siReader = new ServerInfoReader();
-    private final ByteBuffer opcodeBuffer = ByteBuffer.allocate(1);
+    private final ByteReader byteReader = new ByteReader();
+
     private State state = State.WAITING_OPCODE;
-    private boolean popped = false;
     private byte opcode;
     private Frame value;
 
@@ -82,11 +89,9 @@ public class FrameReader implements Reader<Frame> {
 
         var status = ERROR;
         if (state == State.WAITING_OPCODE) {
-            Readers.readCompact(buffer, opcodeBuffer);
-            status = REFILL;
-            if (!opcodeBuffer.hasRemaining()) {
-                opcodeBuffer.flip();
-                opcode = opcodeBuffer.get();
+            status = byteReader.process(buffer);
+            if (status == DONE) {
+                opcode = byteReader.get();
                 state = State.WAITING_PAYLOAD;
             }
         }
@@ -109,19 +114,6 @@ public class FrameReader implements Reader<Frame> {
             return Pair.of(generator.apply(reader.get()), DONE);
         }
         return Pair.of(null, status);
-    }
-
-    private <T> Pair<Frame, ProcessStatus> processPayloadWithPop(
-        ByteBuffer buffer,
-        Reader<T> reader,
-        Function<T, Frame> generator
-    ) {
-        if (!popped) {
-            popped = true;
-            var a = buffer.get();
-            System.out.println("POP " + Integer.toHexString(a));
-        }
-        return processPayload(buffer, reader, generator);
     }
 
     private Pair<Frame, ProcessStatus> processNullPayload(
@@ -202,8 +194,6 @@ public class FrameReader implements Reader<Frame> {
     public void reset() {
         value = null;
         state = State.WAITING_OPCODE;
-        popped = false;
-        opcodeBuffer.clear();
         opcode = 0;
         asciiReader.reset();
         utf8Reader.reset();
@@ -213,6 +203,7 @@ public class FrameReader implements Reader<Frame> {
         fifReader.reset();
         fliReader.reset();
         siReader.reset();
+        byteReader.reset();
     }
 
     private enum State {DONE, WAITING_OPCODE, WAITING_PAYLOAD, ERROR}

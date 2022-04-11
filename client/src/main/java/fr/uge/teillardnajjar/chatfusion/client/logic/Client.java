@@ -1,8 +1,8 @@
 package fr.uge.teillardnajjar.chatfusion.client.logic;
 
 import fr.uge.teillardnajjar.chatfusion.client.command.CommandParser;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.util.concurrent.Pipe;
 
 import java.io.IOException;

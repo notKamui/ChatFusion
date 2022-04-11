@@ -1,7 +1,7 @@
 package fr.uge.teillardnajjar.chatfusion.client.file;
 
 import fr.uge.teillardnajjar.chatfusion.client.logic.Client;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

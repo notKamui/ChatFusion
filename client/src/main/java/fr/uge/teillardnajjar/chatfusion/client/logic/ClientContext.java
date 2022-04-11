@@ -7,7 +7,7 @@ import fr.uge.teillardnajjar.chatfusion.client.file.FileSender;
 import fr.uge.teillardnajjar.chatfusion.client.file.FilesManager;
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.io.IOException;

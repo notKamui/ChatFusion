@@ -1,13 +1,13 @@
 package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedFileChunk;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedMessage;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.FusionLockInfo;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.Inet;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.ServerInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.ForwardedIdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.ForwardedIdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.FusionLockInfo;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.Inet;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.ServerInfo;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.io.IOException;
