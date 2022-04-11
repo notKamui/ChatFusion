@@ -30,6 +30,11 @@ public class ComposedReader<T> implements Reader<T> {
         return new InnerReader<>(reader, onDone);
     }
 
+    private static <P> void finishReader(InnerReader<P> reader) {
+        reader.onDone(reader.get());
+        reader.reset();
+    }
+
     @Override
     public ProcessStatus process(ByteBuffer buffer) {
         if (status == DONE || status == ERROR) {
@@ -39,8 +44,7 @@ public class ComposedReader<T> implements Reader<T> {
         var reader = readers[current];
         status = reader.process(buffer);
         if (status == DONE) {
-            reader.onDone(reader.get());
-            reader.reset();
+            finishReader(reader);
             current++;
             if (current < readers.length) {
                 status = REFILL;
@@ -69,12 +73,11 @@ public class ComposedReader<T> implements Reader<T> {
 
     public static class InnerReader<P> implements Reader<P> {
         private final Reader<P> reader;
-        private final Consumer<Object> onDone;
+        private final Consumer<P> onDone;
 
-        @SuppressWarnings("unchecked")
         InnerReader(Reader<P> reader, Consumer<P> onDone) {
             this.reader = reader;
-            this.onDone = (Consumer<Object>) onDone;
+            this.onDone = onDone;
         }
 
         @Override
@@ -92,7 +95,7 @@ public class ComposedReader<T> implements Reader<T> {
             reader.reset();
         }
 
-        private void onDone(Object o) {
+        private void onDone(P o) {
             onDone.accept(o);
         }
     }
