@@ -17,7 +17,7 @@ public class IdentifiedMessageReaderTest {
         Assertions.assertEquals(msg, reader.get());
 
         reader.reset();
-        packet.flip();
+        packet = msg.toUnflippedBuffer();
         while (reader.process(packet) != Reader.ProcessStatus.DONE) ;
         Assertions.assertEquals(msg, reader.get());
     }
