@@ -64,9 +64,7 @@ public abstract class AbstractContext implements Context {
     @Override
     public void updateInterestOps() {
         int interestOps = 0;
-        if (closed) {
-            System.out.println("AAAAAAAA");
-        }
+
         if (!closed && bin.hasRemaining()) {
             interestOps |= SelectionKey.OP_READ;
         }
@@ -107,7 +105,7 @@ public abstract class AbstractContext implements Context {
 
     protected void processIn() {
         if (visitor == null) throw new AssertionError();
-        while (bin.hasRemaining()) {
+        while (true) {
             var state = reader.process(bin);
             switch (state) {
                 case ERROR:
@@ -117,8 +115,8 @@ public abstract class AbstractContext implements Context {
                     return;
                 case DONE:
                     var frame = reader.get();
-                    frame.accept(visitor);
                     reader.reset();
+                    frame.accept(visitor);
                     break;
             }
         }

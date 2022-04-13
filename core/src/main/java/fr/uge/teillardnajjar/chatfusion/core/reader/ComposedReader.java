@@ -45,10 +45,12 @@ public class ComposedReader<T> implements Reader<T> {
         status = reader.process(buffer);
         if (status == DONE) {
             finishReader(reader);
+            status = REFILL;
             current++;
-            if (current < readers.length) {
-                status = REFILL;
-            }
+        }
+
+        if (current == readers.length) {
+            status = DONE;
         }
 
         return status;

@@ -37,6 +37,7 @@ import fr.uge.teillardnajjar.chatfusion.core.reader.sized.StringReader;
 import fr.uge.teillardnajjar.chatfusion.core.util.Pair;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -66,8 +67,9 @@ import static fr.uge.teillardnajjar.chatfusion.core.reader.Reader.ProcessStatus.
 
 public class FrameReader implements Reader<Frame> {
 
-    private final StringReader asciiReader = StringReader.ascii();
-    private final StringReader utf8Reader = StringReader.utf8();
+    private final ByteReader byteReader = new ByteReader();
+    private final StringReader asciiReader = new StringReader(StandardCharsets.US_ASCII);
+    private final StringReader utf8Reader = new StringReader(StandardCharsets.UTF_8);
     private final IdentifiedMessageReader imReader = new IdentifiedMessageReader();
     private final ForwardedIdentifiedMessageReader fimReader = new ForwardedIdentifiedMessageReader();
     private final ForwardedIdentifiedFileChunkReader fifReader = new ForwardedIdentifiedFileChunkReader();
@@ -75,8 +77,6 @@ public class FrameReader implements Reader<Frame> {
     private final FusionLockInfoReader fliReader = new FusionLockInfoReader();
     private final InetReader inetReader = new InetReader();
     private final ServerInfoReader siReader = new ServerInfoReader();
-    private final ByteReader byteReader = new ByteReader();
-
     private State state = State.WAITING_OPCODE;
     private byte opcode;
     private Frame value;
@@ -195,6 +195,7 @@ public class FrameReader implements Reader<Frame> {
         value = null;
         state = State.WAITING_OPCODE;
         opcode = 0;
+        byteReader.reset();
         asciiReader.reset();
         utf8Reader.reset();
         imReader.reset();
@@ -203,7 +204,6 @@ public class FrameReader implements Reader<Frame> {
         fifReader.reset();
         fliReader.reset();
         siReader.reset();
-        byteReader.reset();
     }
 
     private enum State {DONE, WAITING_OPCODE, WAITING_PAYLOAD, ERROR}
