@@ -1,4 +1,4 @@
-package fr.uge.teillardnajjar.chatfusion.server.logic;
+package fr.uge.teillardnajjar.chatfusion.serverold.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Fusion;
