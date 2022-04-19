@@ -41,19 +41,18 @@ public class ComposedReader<T> implements Reader<T> {
             throw new IllegalStateException("Reader is done or in error state");
         }
 
-        var reader = readers[current];
-        status = reader.process(buffer);
-        if (status == DONE) {
-            finishReader(reader);
-            status = REFILL;
-            current++;
+        while (current < readers.length) {
+            var reader = readers[current];
+            status = reader.process(buffer);
+            if (status == DONE) {
+                finishReader(reader);
+                current++;
+            } else {
+                return status;
+            }
         }
 
-        if (current == readers.length) {
-            status = DONE;
-        }
-
-        return status;
+        return DONE;
     }
 
     @Override
