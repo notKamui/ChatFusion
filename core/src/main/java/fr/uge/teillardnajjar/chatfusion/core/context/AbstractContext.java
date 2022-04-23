@@ -22,8 +22,8 @@ public abstract class AbstractContext implements Context {
     protected final ByteBuffer bin;
     protected final ByteBuffer bout;
     protected final ArrayDeque<ByteBuffer> queue;
+    protected FrameVisitor visitor;
     private final FrameReader reader;
-    private FrameVisitor visitor;
 
     protected boolean closed = false;
 

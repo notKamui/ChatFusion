@@ -10,6 +10,7 @@ import fr.uge.teillardnajjar.chatfusion.server.command.CommandParser;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -194,6 +195,11 @@ public class Server {
 
     //================================== GETTERS =============================================
 
+    /**
+     * Lazily returns the ServerInfo of the server.
+     *
+     * @return the ServerInfo of the server
+     */
     public ServerInfo info() {
         if (info != null) return info;
         var ip = isa.getAddress();
@@ -202,7 +208,45 @@ public class Server {
     }
 
 
-    //================================ PROCESSING ============================================
+    public String name() {
+        return name;
+    }
+
+    //============================= PROCESSING CLIENT ========================================
+
+    /**
+     * Checks if the given login is available, and if so, adds it to the list of connected users.
+     *
+     * @param username the login to check
+     * @param ctx      the context of the client
+     * @return true if the login is available, false otherwise
+     */
+    public boolean checkLogin(String username, ServerConnectionContext ctx) {
+        if (connectedUsers.containsKey(username)) return false;
+        connectedUsers.put(username, ctx);
+        return true;
+    }
+
+    /**
+     * Removes the given login from the list of connected users.
+     *
+     * @param username the login to remove
+     */
+    public void disconnectUser(String username) {
+        connectedUsers.remove(username);
+    }
+
+    /**
+     * Broadcasts a buffer to all connected users.
+     */
+    public void broadcast(ByteBuffer msgBuffer) {
+        connectedUsers.values().forEach(cctx -> cctx.queueMessageResp(msgBuffer));
+        siblings.values().stream()
+            .map(Pair::second)
+            .forEach(sctx -> sctx.queueMsgFwd(msgBuffer));
+    }
+
+    // ============================== PROCESSING SERVER ========================================
 
     public void fusion(String address, short port) {
         // TODO
