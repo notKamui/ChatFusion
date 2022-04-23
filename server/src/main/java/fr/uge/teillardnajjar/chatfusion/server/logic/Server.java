@@ -74,7 +74,7 @@ public class Server {
     }
 
     private void sendCommand(String cmd) throws InterruptedException {
-        if (!pipe.isEmpty()) return;
+        if (cmd.isBlank()) return;
         pipe.in(cmd);
         wakeup();
     }
@@ -84,13 +84,14 @@ public class Server {
     }
 
     private void processCommands() {
-        if (pipe.isEmpty()) return;
-        var cmd = pipe.out();
-        if (cmd.isEmpty()) return;
-        CommandParser.parse(cmd).ifPresentOrElse(
-            command -> command.execute(this),
-            () -> System.out.println("! Unknown command : " + cmd)
-        );
+        while (!pipe.isEmpty()) {
+            var cmd = pipe.out();
+            if (cmd.isBlank()) continue;
+            CommandParser.parse(cmd).ifPresentOrElse(
+                command -> command.execute(this),
+                () -> System.out.println("! Unknown command : " + cmd)
+            );
+        }
     }
 
     public void launch() throws IOException {
