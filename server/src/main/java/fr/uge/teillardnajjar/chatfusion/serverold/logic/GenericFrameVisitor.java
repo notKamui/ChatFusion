@@ -1,5 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.serverold.logic;
 
+import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Fusion;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLink;
@@ -13,6 +14,11 @@ public class GenericFrameVisitor implements FrameVisitor {
 
     public GenericFrameVisitor(GenericContext ctx) {
         this.ctx = ctx;
+    }
+
+    @Override
+    public Context context() {
+        return ctx;
     }
 
     @Override

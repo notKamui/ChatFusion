@@ -1,5 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.serverold.logic;
 
+import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.Msg;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivFile;
@@ -13,6 +14,11 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
     public ServerToClientFrameVisitor(ServerToClientContext ctx) {
         Objects.requireNonNull(ctx);
         this.ctx = ctx;
+    }
+
+    @Override
+    public Context context() {
+        return ctx;
     }
 
     @Override
