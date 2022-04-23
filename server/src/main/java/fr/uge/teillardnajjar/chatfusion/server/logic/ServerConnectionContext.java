@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
 import static fr.uge.teillardnajjar.chatfusion.server.logic.ServerConnectionContext.ConnectionType.CLIENT;
-import static fr.uge.teillardnajjar.chatfusion.server.logic.ServerConnectionContext.ConnectionType.SERVER;
 import static fr.uge.teillardnajjar.chatfusion.server.logic.ServerConnectionContext.ConnectionType.UNKNOWN;
 
 public class ServerConnectionContext extends AbstractContext implements Context {
@@ -52,23 +51,13 @@ public class ServerConnectionContext extends AbstractContext implements Context 
 
     // ====================== BUFFER QUEUERS ======================
 
-    private void queueWithOpcode(ByteBuffer buffer, byte opcode) {
+    public void queueWithOpcode(ByteBuffer buffer, byte opcode) {
         buffer.flip();
         var toSend = ByteBuffer.allocate(1 + buffer.remaining())
             .put(opcode)
             .put(buffer)
             .flip();
         queuePacket(toSend);
-    }
-
-    public void queueMessageResp(ByteBuffer msgBuffer) {
-        assert type == CLIENT;
-        queueWithOpcode(msgBuffer, OpCodes.MSGRESP);
-    }
-
-    public void queueMsgFwd(ByteBuffer message) {
-        assert type == SERVER;
-        queueWithOpcode(message, OpCodes.MSGFWD);
     }
 
     // =========================== OTHERS ==========================

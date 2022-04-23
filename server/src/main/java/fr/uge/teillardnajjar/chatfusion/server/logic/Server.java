@@ -3,6 +3,7 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.helper.Helpers;
 import fr.uge.teillardnajjar.chatfusion.core.model.part.ServerInfo;
+import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 import fr.uge.teillardnajjar.chatfusion.core.util.Pair;
 import fr.uge.teillardnajjar.chatfusion.core.util.concurrent.Pipe;
 import fr.uge.teillardnajjar.chatfusion.server.command.CommandParser;
@@ -212,7 +213,7 @@ public class Server {
         return name;
     }
 
-    //============================= PROCESSING CLIENT ========================================
+    //================================ PROCESSING ========================================
 
     /**
      * Checks if the given login is available, and if so, adds it to the list of connected users.
@@ -240,13 +241,11 @@ public class Server {
      * Broadcasts a buffer to all connected users.
      */
     public void broadcast(ByteBuffer msgBuffer) {
-        connectedUsers.values().forEach(cctx -> cctx.queueMessageResp(msgBuffer));
+        connectedUsers.values().forEach(cctx -> cctx.queueWithOpcode(msgBuffer, OpCodes.MSGRESP));
         siblings.values().stream()
             .map(Pair::second)
-            .forEach(sctx -> sctx.queueMsgFwd(msgBuffer));
+            .forEach(sctx -> sctx.queueWithOpcode(msgBuffer, OpCodes.MSGFWD));
     }
-
-    // ============================== PROCESSING SERVER ========================================
 
     public void fusion(String address, short port) {
         // TODO
