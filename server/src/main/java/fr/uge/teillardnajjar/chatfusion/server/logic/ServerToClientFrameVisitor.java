@@ -41,12 +41,12 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(PrivMsg frame) {
-        var msgBuffer = new IdentifiedMessage(
-            new Identifier(username, server.name()),
-            frame.message().message()
-        ).toUnflippedBuffer();
+        var message = frame.message();
+        var msgBuffer = message
+            .with(new Identifier(username, server.name()))
+            .toUnflippedBuffer();
         server.sendTo(
-            frame.message().identifier(),
+            message.identifier(),
             msgBuffer,
             OpCodes.PRIVMSGRESP,
             OpCodes.PRIVMSGFWD
@@ -55,6 +55,15 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(PrivFile frame) {
-        // TODO
+        var fileChunk = frame.identifiedFileChunk();
+        var fileBuffer = fileChunk
+            .with(new Identifier(username, server.name()))
+            .toUnflippedBuffer();
+        server.sendTo(
+            fileChunk.identifier(),
+            fileBuffer,
+            OpCodes.PRIVFILERESP,
+            OpCodes.PRIVFILEFWD
+        );
     }
 }

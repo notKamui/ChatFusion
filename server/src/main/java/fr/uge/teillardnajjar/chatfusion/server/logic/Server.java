@@ -211,7 +211,11 @@ public class Server {
         return info;
     }
 
-
+    /**
+     * Gets the name of the server.
+     *
+     * @return the name of the server
+     */
     public String name() {
         return name;
     }

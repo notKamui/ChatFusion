@@ -28,6 +28,10 @@ public record IdentifiedFileChunk(
         return "%s file %s (size %dB)".formatted(identifier, filename, fileSize);
     }
 
+    public IdentifiedFileChunk with(Identifier identifier) {
+        return new IdentifiedFileChunk(identifier, filename, fileSize, fileId, chunk);
+    }
+
     public ByteBuffer toUnflippedBuffer() {
         var unameBuffer = ASCII.encode(identifier.username());
         var snameBuffer = ASCII.encode(identifier.servername());

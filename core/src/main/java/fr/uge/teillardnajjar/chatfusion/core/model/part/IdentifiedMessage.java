@@ -17,6 +17,15 @@ public record IdentifiedMessage(
         Objects.requireNonNull(message);
     }
 
+    @Override
+    public String toString() {
+        return "%s %s".formatted(identifier, message);
+    }
+
+    public IdentifiedMessage with(Identifier identifier) {
+        return new IdentifiedMessage(identifier, message);
+    }
+
     public ByteBuffer toUnflippedBuffer() {
         var unameBuffer = ASCII.encode(identifier.username());
         var snameBuffer = ASCII.encode(identifier.servername());
@@ -29,10 +38,5 @@ public record IdentifiedMessage(
             .putInt(msgBuffer.remaining())
             .put(msgBuffer);
         return buffer;
-    }
-
-    @Override
-    public String toString() {
-        return "%s %s".formatted(identifier, message);
     }
 }
