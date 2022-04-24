@@ -7,6 +7,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivFile;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.PrivMsg;
 import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedMessage;
 import fr.uge.teillardnajjar.chatfusion.core.model.part.Identifier;
+import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 public class ServerToClientFrameVisitor implements FrameVisitor {
 
@@ -40,7 +41,16 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(PrivMsg frame) {
-        // TODO
+        var msgBuffer = new IdentifiedMessage(
+            new Identifier(username, server.name()),
+            frame.message().message()
+        ).toUnflippedBuffer();
+        server.sendTo(
+            frame.message().identifier(),
+            msgBuffer,
+            OpCodes.PRIVMSGRESP,
+            OpCodes.PRIVMSGFWD
+        );
     }
 
     @Override
