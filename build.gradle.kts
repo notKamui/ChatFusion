@@ -45,9 +45,10 @@ fun Project.jarConfig(mainClassFQName: String) {
         manifest {
             attributes["Main-Class"] = mainClassFQName
         }
-        configurations["compileClasspath"].forEach { file ->
+        configurations.compileClasspath.get().files.forEach { file ->
             from(zipTree(file.absoluteFile))
         }
+        destinationDirectory.set(rootProject.file("executables"))
     }
 
 }

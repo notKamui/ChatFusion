@@ -27,14 +27,23 @@ gradle clean jar
 
 This will create the runnable artifacts
 `ChatFusion-client-{version}.jar` and `ChatFusion-server-{version}.jar`
-in the `client/build/libs/` and `server/build/libs/` directories, respectively.
+in the `executables/` directory.
 
 You can run them as you would with any jar archive:
 
 ```sh
-java -jar ChatFusion-client-{version}.jar [options]
-java -jar ChatFusion-server-{version}.jar [options]
+java -jar ChatFusion-server-{version}.jar {PORT} {SERVERNAME}
 ```
+
+The server will listen to the specified port, and must have a unique name (5 ASCII non-zero characters)
+
+```sh
+java -jar ChatFusion-client-{version}.jar {HOSTNAME} {PORT} {FILES_DIR} {USERNAME}
+```
+
+A client will connect to the specified host and port, and will send and receive files in the specified directory.
+The user will be connected with a username (non-zero ASCII characters). If the username is already in use
+on this server, the connection will be refused.
 
 ## Authors
 
