@@ -2,7 +2,9 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.helper.Helpers;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.part.Identifier;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.Inet;
 import fr.uge.teillardnajjar.chatfusion.core.model.part.ServerInfo;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 import fr.uge.teillardnajjar.chatfusion.core.util.Pair;
@@ -17,6 +19,7 @@ import java.nio.channels.Channel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -212,6 +215,15 @@ public class Server {
     }
 
     /**
+     * Returns the current fusion lock info of the server (itself + its siblings).
+     *
+     * @return the current FusionLockInfo of the server
+     */
+    public FusionLockInfo fusionLockInfo() {
+        return new FusionLockInfo(info(), siblings.values().stream().map(Pair::first).toList());
+    }
+
+    /**
      * Gets the name of the server.
      *
      * @return the name of the server
@@ -296,6 +308,23 @@ public class Server {
     }
 
     public void fusion(String address, short port) {
-        // TODO
+        if (leader != null) { // if is not the leader
+            var leaderCtx = siblings.get(leader.servername()).second();
+            var toSend = new Inet(address, port).toBuffer();
+            leaderCtx.queueWithOpcode(toSend, OpCodes.FUSIONREQFWDA);
+            return;
+        }
+        try {
+            var sc = SocketChannel.open();
+            sc.configureBlocking(false);
+            var key = sc.register(selector, SelectionKey.OP_CONNECT);
+            var ctx = new ServerConnectionContext(key, this);
+            key.attach(ctx);
+            var otherAddress = new InetSocketAddress(address, port);
+            sc.connect(otherAddress);
+            fusionLocked = true;
+        } catch (IOException e) {
+            LOGGER.warning("Fusion : Failed to connect to " + address + ":" + port);
+        }
     }
 }

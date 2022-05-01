@@ -35,7 +35,7 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
         var msgBuffer = new IdentifiedMessage(
             new Identifier(username, server.name()),
             frame.message()
-        ).toUnflippedBuffer();
+        ).toBuffer();
         server.broadcast(msgBuffer);
     }
 
@@ -44,7 +44,7 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
         var message = frame.message();
         var msgBuffer = message
             .with(new Identifier(username, server.name()))
-            .toUnflippedBuffer();
+            .toBuffer();
         server.sendTo(
             message.identifier(),
             msgBuffer,
@@ -58,7 +58,7 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
         var fileChunk = frame.identifiedFileChunk();
         var fileBuffer = fileChunk
             .with(new Identifier(username, server.name()))
-            .toUnflippedBuffer();
+            .toBuffer();
         server.sendTo(
             fileChunk.identifier(),
             fileBuffer,

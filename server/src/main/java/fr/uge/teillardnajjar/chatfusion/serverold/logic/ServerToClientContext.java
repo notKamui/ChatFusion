@@ -31,7 +31,7 @@ public class ServerToClientContext extends AbstractContext implements Context {
 
     public ByteBuffer buildMessageResp(String message) {
         return new IdentifiedMessage(new Identifier(username, server.name()), message)
-            .toUnflippedBuffer();
+            .toBuffer();
     }
 
     @Override

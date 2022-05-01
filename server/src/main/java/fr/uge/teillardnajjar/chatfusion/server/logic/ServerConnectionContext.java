@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
 import static fr.uge.teillardnajjar.chatfusion.server.logic.ServerConnectionContext.ConnectionType.CLIENT;
+import static fr.uge.teillardnajjar.chatfusion.server.logic.ServerConnectionContext.ConnectionType.SERVER;
 import static fr.uge.teillardnajjar.chatfusion.server.logic.ServerConnectionContext.ConnectionType.UNKNOWN;
 
 public class ServerConnectionContext extends AbstractContext implements Context {
@@ -21,7 +22,10 @@ public class ServerConnectionContext extends AbstractContext implements Context 
     }
 
     void doConnect() {
-        // TODO
+        type = SERVER;
+        setVisitor(new ServerToServerFrameVisitor(server, this));
+        var info = server.fusionLockInfo().toBuffer();
+        queueWithOpcode(info, OpCodes.FUSIONREQ);
     }
 
     public void confirmUser(String username) {

@@ -189,7 +189,7 @@ public class Server {
     }
 
     public void broadcast(IdentifiedMessage message) {
-        var messageResp = message.toUnflippedBuffer();
+        var messageResp = message.toBuffer();
         selector.keys().stream()
             .filter(SelectionKey::isValid)
             .filter(k -> k.attachment() instanceof ServerToClientContext)

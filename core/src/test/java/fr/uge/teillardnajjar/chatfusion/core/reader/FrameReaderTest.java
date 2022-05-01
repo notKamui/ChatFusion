@@ -21,9 +21,9 @@ public class FrameReaderTest {
         Assertions.assertEquals(tempok, reader.get());
 
         var msg = new IdentifiedMessage(new Identifier("kamui", "ABCDE"), "Hello world!");
-        var packet = msg.toUnflippedBuffer().flip();
+        var packet = msg.toBuffer().flip();
         var msg2 = new IdentifiedMessage(new Identifier("kamui", "ABCDE"), "No no");
-        var packet2 = msg2.toUnflippedBuffer().flip();
+        var packet2 = msg2.toBuffer().flip();
         buffer = ByteBuffer.allocate(1 + packet.remaining() + 1 + packet2.remaining())
             .put(OpCodes.MSGRESP)
             .put(packet)

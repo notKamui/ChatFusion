@@ -13,15 +13,14 @@ public record FusionLockInfo(
         Objects.requireNonNull(siblings);
     }
 
+    @Override
     public ByteBuffer toBuffer() {
-        var self = this.self.toBuffer();
-        var sibBuffers = siblings.stream().map(ServerInfo::toBuffer).toList();
+        var self = this.self.toBuffer().flip();
+        var sibBuffers = siblings.stream().map(si -> si.toBuffer().flip()).toList();
         var sibsTotalSize = sibBuffers.stream().mapToInt(ByteBuffer::remaining).sum();
         ByteBuffer buffer = ByteBuffer.allocate(self.remaining() + Integer.BYTES + sibsTotalSize);
         buffer.put(self).putInt(siblings.size());
         sibBuffers.forEach(buffer::put);
-        sibBuffers.forEach(buffer::put);
-        buffer.flip();
         return buffer;
     }
 }

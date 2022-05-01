@@ -12,12 +12,12 @@ public class IdentifiedMessageReaderTest {
     public void test() {
         var reader = new IdentifiedMessageReader();
         var msg = new IdentifiedMessage(new Identifier("kamui", "ABCDE"), "Hello world!");
-        var packet = msg.toUnflippedBuffer();
+        var packet = msg.toBuffer();
         while (reader.process(packet) != Reader.ProcessStatus.DONE) ;
         Assertions.assertEquals(msg, reader.get());
 
         reader.reset();
-        packet = msg.toUnflippedBuffer();
+        packet = msg.toBuffer();
         while (reader.process(packet) != Reader.ProcessStatus.DONE) ;
         Assertions.assertEquals(msg, reader.get());
     }

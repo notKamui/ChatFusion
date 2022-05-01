@@ -132,7 +132,7 @@ public class ServerToServerContext extends FusionContext implements Context {
 
     public void queuePrivMsgFwd(String username, IdentifiedMessage message) {
         var unameBuffer = ASCII.encode(username);
-        var msgBuffer = message.toUnflippedBuffer().flip();
+        var msgBuffer = message.toBuffer().flip();
         var buffer = ByteBuffer.allocate(1 + Integer.BYTES + unameBuffer.remaining() + msgBuffer.remaining())
             .put(OpCodes.PRIVMSGFWD)
             .putInt(unameBuffer.remaining())
@@ -144,7 +144,7 @@ public class ServerToServerContext extends FusionContext implements Context {
 
     public void queuePrivFileFwd(String username, IdentifiedFileChunk chunk) {
         var unameBuffer = ASCII.encode(username);
-        var chunkBuffer = chunk.toUnflippedBuffer().flip();
+        var chunkBuffer = chunk.toBuffer().flip();
         var buffer = ByteBuffer.allocate(1 + Integer.BYTES + unameBuffer.remaining() + chunkBuffer.remaining())
             .put(OpCodes.PRIVFILEFWD)
             .putInt(unameBuffer.remaining())

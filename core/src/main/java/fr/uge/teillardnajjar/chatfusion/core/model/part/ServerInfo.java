@@ -15,6 +15,7 @@ public record ServerInfo(
         if (port < 0) throw new IllegalArgumentException("port must be positive");
     }
 
+    @Override
     public ByteBuffer toBuffer() {
         byte type;
         var ip = this.ip.getAddress();
@@ -25,9 +26,6 @@ public record ServerInfo(
             .put(StandardCharsets.US_ASCII.encode(servername))
             .put(type)
             .put(ip)
-            .putShort(port)
-            .flip();
+            .putShort(port);
     }
-
-    public enum Type {IPv4, IPv6}
 }
