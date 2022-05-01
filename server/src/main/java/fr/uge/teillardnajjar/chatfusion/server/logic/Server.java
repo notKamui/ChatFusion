@@ -183,6 +183,11 @@ public class Server {
         Thread.currentThread().interrupt();
     }
 
+    public void fusion(String address, short port) {
+        if (leader == null) engageFusionRequest(address, port);
+        else forward(address, port);
+    }
+
     public void printInfo() {
         System.out.printf("""
                 Server Info:
@@ -307,11 +312,27 @@ public class Server {
         sctx.queueWithOpcode(fwdBuffer, fwdOpcode);
     }
 
-    public void fusion(String address, short port) {
-        if (leader != null) { // if is not the leader
-            var leaderCtx = siblings.get(leader.servername()).second();
-            var toSend = new Inet(address, port).toBuffer();
-            leaderCtx.queueWithOpcode(toSend, OpCodes.FUSIONREQFWDA);
+    /**
+     * Forwards a fusion request to the leader.
+     *
+     * @param address the hostname of the server to connect to
+     * @param port    the port of the server to connect to
+     */
+    public void forward(String address, short port) {
+        var leaderCtx = siblings.get(leader.servername()).second();
+        var toSend = new Inet(address, port).toBuffer();
+        leaderCtx.queueWithOpcode(toSend, OpCodes.FUSIONREQFWDA);
+    }
+
+    /**
+     * Engages the fusion protocol with the given server.
+     *
+     * @param address the hostname of the server to connect to
+     * @param port    the port of the server to connect to
+     */
+    public void engageFusionRequest(String address, short port) {
+        if (fusionLocked) {
+            LOGGER.warning("Fusion request engaged while fusion is locked ; ignoring");
             return;
         }
         try {

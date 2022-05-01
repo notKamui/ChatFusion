@@ -57,7 +57,7 @@ public class ServerConnectionContext extends AbstractContext implements Context 
 
     public void queueWithOpcode(ByteBuffer buffer, byte opcode) {
         buffer.flip();
-        var toSend = ByteBuffer.allocate(1 + buffer.remaining())
+        var toSend = ByteBuffer.allocate(Byte.BYTES + buffer.remaining())
             .put(opcode)
             .put(buffer)
             .flip();
