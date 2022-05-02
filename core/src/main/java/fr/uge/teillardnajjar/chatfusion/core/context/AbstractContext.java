@@ -17,7 +17,7 @@ public abstract class AbstractContext implements Context {
 
     protected final static Logger LOGGER = Logger.getLogger(AbstractContext.class.getName());
     private final static int BUFFER_SIZE = 32_768;
-    public final SelectionKey key;
+    protected final SelectionKey key;
     protected final SocketChannel sc;
     protected final ByteBuffer bin;
     protected final ByteBuffer bout;
@@ -25,6 +25,7 @@ public abstract class AbstractContext implements Context {
     protected FrameVisitor visitor;
     private final FrameReader reader;
 
+    protected boolean connected = false;
     protected boolean closed = false;
 
     public AbstractContext(SelectionKey key) {
@@ -40,6 +41,10 @@ public abstract class AbstractContext implements Context {
     protected void setVisitor(FrameVisitor visitor) {
         Objects.requireNonNull(visitor);
         this.visitor = visitor;
+    }
+
+    public void setConnected(boolean connected) {
+        this.connected = connected;
     }
 
     @Override
@@ -63,6 +68,11 @@ public abstract class AbstractContext implements Context {
 
     @Override
     public void updateInterestOps() {
+        if (!connected) {
+            key.interestOps(SelectionKey.OP_CONNECT);
+            return;
+        }
+
         int interestOps = 0;
 
         if (!closed && bin.hasRemaining()) {

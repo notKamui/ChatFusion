@@ -4,6 +4,7 @@ import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
@@ -21,15 +22,17 @@ public class ServerConnectionContext extends AbstractContext implements Context 
         setVisitor(new ServerToUnknownFrameVisitor(server, this));
     }
 
-    void doConnect() {
+    void doConnect() throws IOException {
+        if (!sc.finishConnect()) return;
+        setConnected(true);
+        updateInterestOps();
         type = SERVER;
         setVisitor(new ServerToServerFrameVisitor(server, this));
-        var info = server.fusionLockInfo().toBuffer();
-        queueWithOpcode(info, OpCodes.FUSIONREQ);
     }
 
     public void confirmUser(String username) {
         assert type == UNKNOWN;
+        setConnected(true);
         LOGGER.info("Confirming user : " + username);
         queuePacket(ByteBuffer.allocate(1).put(OpCodes.TEMPOK).flip());
         setVisitor(new ServerToClientFrameVisitor(username, server, this));
@@ -38,6 +41,7 @@ public class ServerConnectionContext extends AbstractContext implements Context 
 
     public void refuseUser() {
         assert type == UNKNOWN;
+        setConnected(true);
         LOGGER.info("Refusing user");
         queuePacket(ByteBuffer.allocate(1).put(OpCodes.TEMPKO).flip());
         closed = true;
@@ -56,6 +60,7 @@ public class ServerConnectionContext extends AbstractContext implements Context 
     // ====================== BUFFER QUEUERS ======================
 
     public void queueWithOpcode(ByteBuffer buffer, byte opcode) {
+        if (buffer == null) buffer = ByteBuffer.allocate(0);
         buffer.flip();
         var toSend = ByteBuffer.allocate(Byte.BYTES + buffer.remaining())
             .put(opcode)
@@ -64,7 +69,21 @@ public class ServerConnectionContext extends AbstractContext implements Context 
         queuePacket(toSend);
     }
 
+
     // =========================== OTHERS ==========================
+
+    public void acknowledgeServer() {
+        setVisitor(new ServerToServerFrameVisitor(server, this));
+        type = SERVER;
+    }
+
+    public void readyToClose() {
+        closed = true;
+    }
+
+    public ConnectionType type() {
+        return type;
+    }
 
     enum ConnectionType {
         UNKNOWN,

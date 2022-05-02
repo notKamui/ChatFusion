@@ -36,7 +36,7 @@ public class ServerToClientFrameVisitor implements FrameVisitor {
             new Identifier(username, server.name()),
             frame.message()
         ).toBuffer();
-        server.broadcast(msgBuffer);
+        server.broadcast(msgBuffer, true);
     }
 
     @Override

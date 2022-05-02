@@ -26,12 +26,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class Server {
-    private final static Logger LOGGER = Logger.getLogger(fr.uge.teillardnajjar.chatfusion.serverold.logic.Server.class.getName());
+    private final static Logger LOGGER = Logger.getLogger(Server.class.getName());
+    private boolean debug = false;
 
     // SELF INFORMATIONS
     private final ServerSocketChannel ssc;
@@ -110,20 +112,18 @@ public class Server {
         console.start();
 
         while (!Thread.interrupted()) {
-            Helpers.printKeys(selector);
-            System.out.println("Starting select");
+            if (debug) Helpers.printKeys(selector);
             try {
                 selector.select(this::treatKey);
                 processCommands();
             } catch (UncheckedIOException e) {
                 throw e.getCause();
             }
-            System.out.println("Select finished");
         }
     }
 
     private void treatKey(SelectionKey key) {
-        Helpers.printSelectedKey(key); // for debug
+        if (debug) Helpers.printSelectedKey(key); // for debug
         try {
             if (key.isValid() && key.isAcceptable()) {
                 doAccept();
@@ -144,6 +144,7 @@ public class Server {
             }
         } catch (IOException e) {
             LOGGER.info("Connection closed with client due to IOException");
+            unlock();
             silentlyClose(key);
         }
     }
@@ -184,8 +185,12 @@ public class Server {
     }
 
     public void fusion(String address, short port) {
-        if (leader == null) engageFusionRequest(address, port);
-        else forward(address, port);
+        if (isLeader()) engageFusionRequest(address, port);
+        else forwardToLeader(new Inet(address, port).toBuffer(), OpCodes.FUSIONREQFWDA);
+    }
+
+    public void toggleDebug() {
+        debug = !debug;
     }
 
     public void printInfo() {
@@ -237,6 +242,29 @@ public class Server {
         return name;
     }
 
+    /**
+     * Defines if the server is the leader of its group.
+     *
+     * @return true if the server is the leader, false otherwise
+     */
+    public boolean isLeader() {
+        return leader == null;
+    }
+
+    /**
+     * Returns the context of the group's leader.
+     *
+     * @return the context of the group's leader
+     */
+    public ServerConnectionContext leaderCtx() {
+        Objects.requireNonNull(leader);
+        return siblings.get(leader.servername()).second();
+    }
+
+    public void unlock() {
+        fusionLocked = false;
+    }
+
     //================================ PROCESSING ========================================
 
     /**
@@ -266,8 +294,9 @@ public class Server {
      *
      * @param msgBuffer the buffer to broadcast
      */
-    public void broadcast(ByteBuffer msgBuffer) {
+    public void broadcast(ByteBuffer msgBuffer, boolean forward) {
         connectedUsers.values().forEach(cctx -> cctx.queueWithOpcode(msgBuffer, OpCodes.MSGRESP));
+        if (!forward) return;
         siblings.values().stream()
             .map(Pair::second)
             .forEach(sctx -> sctx.queueWithOpcode(msgBuffer, OpCodes.MSGFWD));
@@ -313,15 +342,27 @@ public class Server {
     }
 
     /**
-     * Forwards a fusion request to the leader.
+     * Forwards a buffer to the leader of the group
      *
-     * @param address the hostname of the server to connect to
-     * @param port    the port of the server to connect to
+     * @param buffer    the buffer to send
+     * @param fwdOpcode the opcode to use
      */
-    public void forward(String address, short port) {
-        var leaderCtx = siblings.get(leader.servername()).second();
-        var toSend = new Inet(address, port).toBuffer();
-        leaderCtx.queueWithOpcode(toSend, OpCodes.FUSIONREQFWDA);
+    private void forwardToLeader(ByteBuffer buffer, byte fwdOpcode) {
+        leaderCtx().queueWithOpcode(buffer, fwdOpcode);
+    }
+
+    private void openConnectionTo(InetSocketAddress other, Consumer<ServerConnectionContext> action) {
+        try {
+            var sc = SocketChannel.open();
+            sc.configureBlocking(false);
+            var key = sc.register(selector, SelectionKey.OP_CONNECT);
+            var ctx = new ServerConnectionContext(key, this);
+            key.attach(ctx);
+            sc.connect(other);
+            action.accept(ctx);
+        } catch (IOException e) {
+            LOGGER.warning("Fusion : Failed to connect to " + other);
+        }
     }
 
     /**
@@ -335,17 +376,74 @@ public class Server {
             LOGGER.warning("Fusion request engaged while fusion is locked ; ignoring");
             return;
         }
-        try {
-            var sc = SocketChannel.open();
-            sc.configureBlocking(false);
-            var key = sc.register(selector, SelectionKey.OP_CONNECT);
-            var ctx = new ServerConnectionContext(key, this);
-            key.attach(ctx);
-            var otherAddress = new InetSocketAddress(address, port);
-            sc.connect(otherAddress);
+        openConnectionTo(new InetSocketAddress(address, port), ctx -> {
+            ctx.queueWithOpcode(fusionLockInfo().toBuffer(), OpCodes.FUSIONREQ);
             fusionLocked = true;
-        } catch (IOException e) {
-            LOGGER.warning("Fusion : Failed to connect to " + address + ":" + port);
+        });
+    }
+
+    /**
+     * This method is supposed to be called after a fusion request forward to the leader (this server)
+     *
+     * @param info the fusion lock info of the other group
+     */
+    public void answerFusionRequest(FusionLockInfo info) {
+        assert isLeader();
+        var address = info.self().ip();
+        var port = info.self().port();
+        openConnectionTo(new InetSocketAddress(address, port), ctx -> {
+            treatFusionRequestAsLeader(info, ctx);
+        });
+    }
+
+
+    private void denyFusionRequest(ServerConnectionContext ctx) {
+        ctx.queueWithOpcode(null, OpCodes.FUSIONREQDENY);
+    }
+
+    private void treatFusionRequestAsLeader(FusionLockInfo info, ServerConnectionContext ctx) {
+        assert isLeader();
+        if (fusionLocked) {
+            denyFusionRequest(ctx);
+            return;
         }
+        var sibsNames = info.siblings().stream().map(ServerInfo::servername).toList();
+        if (siblings.containsKey(info.self().servername()) ||
+            siblings.keySet().stream().anyMatch(sibsNames::contains)
+        ) { // name conflict
+            denyFusionRequest(ctx);
+            return;
+        }
+        fusionLocked = true;
+        ctx.setConnected(true);
+        ctx.queueWithOpcode(fusionLockInfo().toBuffer(), OpCodes.FUSIONREQACCEPT);
+        acceptFusion(info, ctx);
+    }
+
+    /**
+     * Handles an incoming fusion request.
+     *
+     * @param info the fusion lock info of the opposite group
+     * @param ctx  the context to which to respond to (the leader of the other group)
+     */
+    public void treatFusionRequest(FusionLockInfo info, ServerConnectionContext ctx) {
+        if (isLeader()) treatFusionRequestAsLeader(info, ctx);
+        else {
+            forwardToLeader(info.toBuffer(), OpCodes.FUSIONREQFWDB);
+            ctx.readyToClose();
+        }
+    }
+
+    public void acceptFusion(FusionLockInfo info, ServerConnectionContext ctx) {
+        System.out.println("Fusion accepted with other leader");
+        ctx.acknowledgeServer();
+        siblings.values().forEach(sib -> {
+            var context = sib.second();
+            context.queueWithOpcode(info.toBuffer(), OpCodes.FUSION);
+        });
+        siblings.put(info.self().servername(), Pair.of(info.self(), ctx));
+        potentialSiblings.addAll(info.siblings());
+        if (potentialSiblings.isEmpty()) fusionLocked = false;
+        if (info.self().servername().compareTo(name) < 0) leader = info.self();
     }
 }

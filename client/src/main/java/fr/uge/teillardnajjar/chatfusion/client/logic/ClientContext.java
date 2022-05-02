@@ -106,7 +106,8 @@ public final class ClientContext extends AbstractContext implements Context {
             LOGGER.warning("Selector lied");
             return;
         }
-        key.interestOps(SelectionKey.OP_WRITE);
+        setConnected(true);
         queueLogin();
+        updateInterestOps();
     }
 }

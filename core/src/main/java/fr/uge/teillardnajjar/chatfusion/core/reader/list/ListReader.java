@@ -15,7 +15,7 @@ abstract class ListReader<T> implements Reader<List<T>> {
     private final IntReader intReader = new IntReader();
     private final Reader<T> reader;
 
-    private List<T> list;
+    private List<T> list = new ArrayList<>();
     private int size;
     private State state = State.WAITING_SIZE;
 
@@ -78,7 +78,7 @@ abstract class ListReader<T> implements Reader<List<T>> {
     @Override
     public void reset() {
         state = State.WAITING_SIZE;
-        list = null;
+        list = new ArrayList<>();
         size = 0;
         reader.reset();
         intReader.reset();
