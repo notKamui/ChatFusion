@@ -24,10 +24,7 @@ public class ServerConnectionContext extends AbstractContext implements Context 
 
     void doConnect() throws IOException {
         if (!sc.finishConnect()) return;
-        setConnected(true);
-        updateInterestOps();
-        type = SERVER;
-        setVisitor(new ServerToServerFrameVisitor(server, this));
+        acknowledgeServer();
     }
 
     public void confirmUser(String username) {
@@ -73,16 +70,14 @@ public class ServerConnectionContext extends AbstractContext implements Context 
     // =========================== OTHERS ==========================
 
     public void acknowledgeServer() {
-        setVisitor(new ServerToServerFrameVisitor(server, this));
+        setConnected(true);
+        updateInterestOps();
         type = SERVER;
+        setVisitor(new ServerToServerFrameVisitor(server, this));
     }
 
     public void readyToClose() {
         closed = true;
-    }
-
-    public ConnectionType type() {
-        return type;
     }
 
     enum ConnectionType {

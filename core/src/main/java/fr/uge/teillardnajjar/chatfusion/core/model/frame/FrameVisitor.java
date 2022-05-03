@@ -86,6 +86,10 @@ public interface FrameVisitor {
         context().silentlyClose();
     }
 
+    default void visit(FusionLinkDeny frame) {
+        context().silentlyClose();
+    }
+
     default void visit(FusionEnd frame) {
         context().silentlyClose();
     }

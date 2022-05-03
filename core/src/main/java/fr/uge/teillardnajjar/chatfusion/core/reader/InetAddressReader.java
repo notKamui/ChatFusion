@@ -83,6 +83,7 @@ public class InetAddressReader implements Reader<InetAddress> {
     public void reset() {
         state = State.WAITING_TYPE;
         ip = null;
+        byteReader.reset();
         intReader.reset();
         int16BReader.reset();
     }

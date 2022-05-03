@@ -47,6 +47,8 @@ public class Server {
     // FUSION HANDLING
     private final Set<ServerInfo> potentialSiblings;
     private ServerInfo info;
+    private ServerInfo potentialLeader = null;
+    private int awaitedFusionEnd = 0;
     // CONNECTIONS
     private ServerInfo leader = null; // is null if is the leader
     private boolean fusionLocked = false;
@@ -201,12 +203,14 @@ public class Server {
                     Leader: %s
                     Siblings: %d
                     Users: %d
+                    Locked: %s
                 """,
             isa.getPort(),
             name,
             leader == null ? "Is the leader" : leader.toString(),
             siblings.size(),
-            connectedUsers.size()
+            connectedUsers.size(),
+            fusionLocked
         );
     }
 
@@ -391,9 +395,7 @@ public class Server {
         assert isLeader();
         var address = info.self().ip();
         var port = info.self().port();
-        openConnectionTo(new InetSocketAddress(address, port), ctx -> {
-            treatFusionRequestAsLeader(info, ctx);
-        });
+        openConnectionTo(new InetSocketAddress(address, port), ctx -> treatFusionRequestAsLeader(info, ctx));
     }
 
 
@@ -443,7 +445,63 @@ public class Server {
         });
         siblings.put(info.self().servername(), Pair.of(info.self(), ctx));
         potentialSiblings.addAll(info.siblings());
-        if (potentialSiblings.isEmpty()) fusionLocked = false;
+        if (potentialSiblings.isEmpty() || siblings.isEmpty()) unlock();
+        awaitedFusionEnd = potentialSiblings.size();
         if (info.self().servername().compareTo(name) < 0) leader = info.self();
+    }
+
+    public void tryLink(FusionLockInfo info) {
+        assert !isLeader();
+        System.out.println("Received fusion packet, trying to link to other servers");
+        potentialSiblings.add(info.self());
+        potentialSiblings.addAll(info.siblings());
+        potentialSiblings.forEach(potSib -> openConnectionTo(
+            new InetSocketAddress(potSib.ip(), potSib.port()),
+            ctx -> ctx.queueWithOpcode(info().toBuffer(), OpCodes.FUSIONLINK)
+        ));
+        potentialLeader = leader.servername().compareTo(info.self().servername()) < 0 ? leader : info.self();
+    }
+
+    public void tryAcceptLink(ServerInfo info, ServerConnectionContext ctx) {
+        ctx.acknowledgeServer();
+        if (!potentialSiblings.contains(info)) { // refusing unknown servers
+            ctx.queueWithOpcode(info().toBuffer(), OpCodes.FUSIONLINKDENY);
+            ctx.readyToClose();
+            return;
+        }
+        ctx.queueWithOpcode(info().toBuffer(), OpCodes.FUSIONLINKACCEPT);
+        siblings.put(info.servername(), Pair.of(info, ctx));
+    }
+
+    private void removeFromPotentialSiblings(ServerInfo info) {
+        potentialSiblings.remove(info);
+        if (potentialSiblings.isEmpty()) {
+            System.out.println("Fusion complete");
+            leaderCtx().queueWithOpcode(info.toBuffer(), OpCodes.FUSIONEND);
+            unlock();
+        }
+        if (isLeader()) endFusion();
+    }
+
+    public void linkAccept(ServerInfo info, ServerConnectionContext ctx) {
+        assert !isLeader();
+        System.out.println("Link accepted with " + info);
+        ctx.acknowledgeServer();
+        potentialLeader = leader;
+        removeFromPotentialSiblings(info);
+        siblings.put(info.servername(), Pair.of(info, ctx));
+    }
+
+    public void linkDeny(ServerInfo info) {
+        assert !isLeader();
+        removeFromPotentialSiblings(info);
+    }
+
+    public void endFusion() {
+        awaitedFusionEnd--;
+        if (awaitedFusionEnd <= 0) {
+            System.out.println("Whole fusion complete ; unlocking");
+            unlock();
+        }
     }
 }

@@ -2,6 +2,10 @@ package fr.uge.teillardnajjar.chatfusion.server.logic;
 
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FrameVisitor;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.Fusion;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionEnd;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLinkAccept;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLinkDeny;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqAccept;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqDeny;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqFwdA;
@@ -73,7 +77,29 @@ public class ServerToServerFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(FusionReqAccept frame) {
+        if (!server.isLeader()) ctx.silentlyClose();
         System.out.println("Fusion request accepted");
         server.acceptFusion(frame.info(), ctx);
+    }
+
+    @Override
+    public void visit(Fusion frame) {
+        if (server.isLeader()) ctx.silentlyClose();
+        server.tryLink(frame.info());
+    }
+
+    @Override
+    public void visit(FusionLinkAccept frame) {
+        server.linkAccept(frame.info(), ctx);
+    }
+
+    @Override
+    public void visit(FusionLinkDeny frame) {
+        server.linkDeny(frame.info());
+    }
+
+    @Override
+    public void visit(FusionEnd frame) {
+        server.endFusion();
     }
 }

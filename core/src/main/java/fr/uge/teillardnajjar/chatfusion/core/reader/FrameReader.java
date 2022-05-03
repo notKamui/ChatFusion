@@ -5,6 +5,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.Fusion;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionEnd;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLink;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLinkAccept;
+import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionLinkDeny;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReq;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqAccept;
 import fr.uge.teillardnajjar.chatfusion.core.model.frame.FusionReqDeny;
@@ -25,6 +26,7 @@ import fr.uge.teillardnajjar.chatfusion.core.model.frame.TempOk;
 import fr.uge.teillardnajjar.chatfusion.core.model.part.FusionLockInfo;
 import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.ServerInfo;
 import fr.uge.teillardnajjar.chatfusion.core.reader.part.ForwardedIdentifiedFileChunkReader;
 import fr.uge.teillardnajjar.chatfusion.core.reader.part.ForwardedIdentifiedMessageReader;
 import fr.uge.teillardnajjar.chatfusion.core.reader.part.FusionLockInfoReader;
@@ -45,6 +47,7 @@ import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSION;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONEND;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONLINK;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONLINKACCEPT;
+import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONLINKDENY;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONREQ;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONREQACCEPT;
 import static fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes.FUSIONREQDENY;
@@ -144,6 +147,13 @@ public class FrameReader implements Reader<Frame> {
         return processPayload(buffer, fliReader, generator);
     }
 
+    private Pair<Frame, ProcessStatus> processSIPayload(
+        ByteBuffer buffer,
+        Function<ServerInfo, Frame> generator
+    ) {
+        return processPayload(buffer, siReader, generator);
+    }
+
     private ProcessStatus processOpcode(ByteBuffer buffer) {
         Pair<Frame, ProcessStatus> proc = switch (opcode) {
             case TEMP -> processPayload(buffer, asciiReader, Temp::new);
@@ -169,9 +179,10 @@ public class FrameReader implements Reader<Frame> {
             case FUSIONREQFWDB -> processFLIPayload(buffer, FusionReqFwdB::new);
 
             case FUSION -> processPayload(buffer, fliReader, Fusion::new);
-            case FUSIONLINK -> processPayload(buffer, siReader, FusionLink::new);
-            case FUSIONLINKACCEPT -> processPayload(buffer, siReader, FusionLinkAccept::new);
-            case FUSIONEND -> processNullPayload(buffer, FusionEnd::new);
+            case FUSIONLINK -> processSIPayload(buffer, FusionLink::new);
+            case FUSIONLINKACCEPT -> processSIPayload(buffer, FusionLinkAccept::new);
+            case FUSIONLINKDENY -> processSIPayload(buffer, FusionLinkDeny::new);
+            case FUSIONEND -> processSIPayload(buffer, FusionEnd::new);
 
             default -> Pair.of(null, ERROR);
         };
