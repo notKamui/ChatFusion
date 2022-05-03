@@ -113,6 +113,8 @@ public class Server {
         console.setDaemon(true);
         console.start();
 
+        printInfo();
+
         while (!Thread.interrupted()) {
             if (debug) Helpers.printKeys(selector);
             try {
@@ -417,7 +419,6 @@ public class Server {
             return;
         }
         fusionLocked = true;
-        ctx.setConnected(true);
         ctx.queueWithOpcode(fusionLockInfo().toBuffer(), OpCodes.FUSIONREQACCEPT);
         acceptFusion(info, ctx);
     }
@@ -429,6 +430,7 @@ public class Server {
      * @param ctx  the context to which to respond to (the leader of the other group)
      */
     public void treatFusionRequest(FusionLockInfo info, ServerConnectionContext ctx) {
+        ctx.acknowledgeServer();
         if (isLeader()) treatFusionRequestAsLeader(info, ctx);
         else {
             forwardToLeader(info.toBuffer(), OpCodes.FUSIONREQFWDB);
@@ -438,14 +440,13 @@ public class Server {
 
     public void acceptFusion(FusionLockInfo info, ServerConnectionContext ctx) {
         System.out.println("Fusion accepted with other leader");
-        ctx.acknowledgeServer();
         siblings.values().forEach(sib -> {
             var context = sib.second();
             context.queueWithOpcode(info.toBuffer(), OpCodes.FUSION);
         });
         siblings.put(info.self().servername(), Pair.of(info.self(), ctx));
         potentialSiblings.addAll(info.siblings());
-        if (potentialSiblings.isEmpty() || siblings.isEmpty()) unlock();
+        if (siblings.isEmpty() || potentialSiblings.isEmpty()) unlock();
         awaitedFusionEnd = potentialSiblings.size();
         if (info.self().servername().compareTo(name) < 0) leader = info.self();
     }
@@ -463,10 +464,9 @@ public class Server {
     }
 
     public void tryAcceptLink(ServerInfo info, ServerConnectionContext ctx) {
-        ctx.acknowledgeServer();
         if (!potentialSiblings.contains(info)) { // refusing unknown servers
             ctx.queueWithOpcode(info().toBuffer(), OpCodes.FUSIONLINKDENY);
-            ctx.readyToClose();
+            //ctx.readyToClose();
             return;
         }
         ctx.queueWithOpcode(info().toBuffer(), OpCodes.FUSIONLINKACCEPT);
@@ -477,7 +477,7 @@ public class Server {
         potentialSiblings.remove(info);
         if (potentialSiblings.isEmpty()) {
             System.out.println("Fusion complete");
-            leaderCtx().queueWithOpcode(info.toBuffer(), OpCodes.FUSIONEND);
+            if (!isLeader()) leaderCtx().queueWithOpcode(info.toBuffer(), OpCodes.FUSIONEND);
             unlock();
         }
         if (isLeader()) endFusion();
@@ -487,8 +487,8 @@ public class Server {
         assert !isLeader();
         System.out.println("Link accepted with " + info);
         ctx.acknowledgeServer();
-        potentialLeader = leader;
         removeFromPotentialSiblings(info);
+        if (potentialLeader != null) leader = potentialLeader;
         siblings.put(info.servername(), Pair.of(info, ctx));
     }
 

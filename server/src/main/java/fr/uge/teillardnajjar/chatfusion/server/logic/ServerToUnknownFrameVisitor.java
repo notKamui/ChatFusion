@@ -36,6 +36,7 @@ public class ServerToUnknownFrameVisitor implements FrameVisitor {
     @Override
     public void visit(FusionReq frame) {
         server.treatFusionRequest(frame.info(), ctx);
+        ctx.acknowledgeServer();
     }
 
     @Override
@@ -43,6 +44,7 @@ public class ServerToUnknownFrameVisitor implements FrameVisitor {
         System.out.println("Fusion request denied");
         ctx.readyToClose();
         server.unlock();
+        ctx.acknowledgeServer();
     }
 
     @Override
@@ -50,10 +52,12 @@ public class ServerToUnknownFrameVisitor implements FrameVisitor {
         if (!server.isLeader()) ctx.silentlyClose();
         System.out.println("Fusion request accepted");
         server.acceptFusion(frame.info(), ctx);
+        ctx.acknowledgeServer();
     }
 
     @Override
     public void visit(FusionLink frame) {
         server.tryAcceptLink(frame.info(), ctx);
+        ctx.acknowledgeServer();
     }
 }
