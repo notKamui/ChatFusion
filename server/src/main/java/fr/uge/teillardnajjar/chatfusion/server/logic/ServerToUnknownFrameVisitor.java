@@ -42,9 +42,9 @@ public class ServerToUnknownFrameVisitor implements FrameVisitor {
     @Override
     public void visit(FusionReqDeny frame) {
         System.out.println("Fusion request denied");
-        ctx.readyToClose();
         server.unlock();
         ctx.acknowledgeServer();
+        ctx.readyToClose();
     }
 
     @Override

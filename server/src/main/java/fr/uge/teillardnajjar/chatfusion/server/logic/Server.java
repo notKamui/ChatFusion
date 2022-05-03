@@ -430,7 +430,6 @@ public class Server {
      * @param ctx  the context to which to respond to (the leader of the other group)
      */
     public void treatFusionRequest(FusionLockInfo info, ServerConnectionContext ctx) {
-        ctx.acknowledgeServer();
         if (isLeader()) treatFusionRequestAsLeader(info, ctx);
         else {
             forwardToLeader(info.toBuffer(), OpCodes.FUSIONREQFWDB);
@@ -447,7 +446,7 @@ public class Server {
         siblings.put(info.self().servername(), Pair.of(info.self(), ctx));
         potentialSiblings.addAll(info.siblings());
         if (siblings.isEmpty() || potentialSiblings.isEmpty()) unlock();
-        awaitedFusionEnd = potentialSiblings.size();
+        awaitedFusionEnd = siblings.size();
         if (info.self().servername().compareTo(name) < 0) leader = info.self();
     }
 
@@ -480,7 +479,6 @@ public class Server {
             if (!isLeader()) leaderCtx().queueWithOpcode(info.toBuffer(), OpCodes.FUSIONEND);
             unlock();
         }
-        if (isLeader()) endFusion();
     }
 
     public void linkAccept(ServerInfo info, ServerConnectionContext ctx) {
