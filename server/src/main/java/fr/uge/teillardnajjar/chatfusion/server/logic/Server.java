@@ -366,8 +366,8 @@ public class Server {
             var key = sc.register(selector, SelectionKey.OP_CONNECT);
             var ctx = new ServerConnectionContext(key, this);
             key.attach(ctx);
-            sc.connect(other);
             action.accept(ctx);
+            sc.connect(other);
         } catch (IOException e) {
             LOGGER.warning("Fusion : Failed to connect to " + other);
         }
@@ -435,12 +435,13 @@ public class Server {
         if (isLeader()) treatFusionRequestAsLeader(info, ctx);
         else {
             forwardToLeader(info.toBuffer(), OpCodes.FUSIONREQFWDB);
-            ctx.readyToClose();
+            //ctx.readyToClose();
         }
     }
 
     public void acceptFusion(FusionLockInfo info, ServerConnectionContext ctx) {
         System.out.println("Fusion accepted with other leader");
+        fusionLocked = true;
         siblings.values().forEach(sib -> {
             var context = sib.second();
             context.queueWithOpcode(info.toBuffer(), OpCodes.FUSION);
