@@ -268,6 +268,8 @@ public class Server {
     }
 
     public void unlock() {
+        System.out.println("Fusion complete ; unlocking");
+        potentialSiblings.clear();
         fusionLocked = false;
     }
 
@@ -464,41 +466,39 @@ public class Server {
 
     public void tryAcceptLink(ServerInfo info, ServerConnectionContext ctx) {
         if (!potentialSiblings.contains(info)) { // refusing unknown servers
-            ctx.queueWithOpcode(info().toBuffer(), OpCodes.FUSIONLINKDENY);
-            //ctx.readyToClose();
+            ctx.queueWithOpcode(null, OpCodes.FUSIONLINKDENY);
             return;
         }
         ctx.queueWithOpcode(info().toBuffer(), OpCodes.FUSIONLINKACCEPT);
+        removeFromPotentialSiblings(info);
         siblings.put(info.servername(), Pair.of(info, ctx));
     }
 
     private void removeFromPotentialSiblings(ServerInfo info) {
         potentialSiblings.remove(info);
         if (potentialSiblings.isEmpty()) {
-            System.out.println("Fusion complete");
-            if (!isLeader()) leaderCtx().queueWithOpcode(info.toBuffer(), OpCodes.FUSIONEND);
+            if (!isLeader()) leaderCtx().queueWithOpcode(info().toBuffer(), OpCodes.FUSIONEND);
             unlock();
         }
     }
 
     public void linkAccept(ServerInfo info, ServerConnectionContext ctx) {
         assert !isLeader();
-        System.out.println("Link accepted with " + info);
         ctx.acknowledgeServer();
         removeFromPotentialSiblings(info);
         if (potentialLeader != null) leader = potentialLeader;
         siblings.put(info.servername(), Pair.of(info, ctx));
     }
 
-    public void linkDeny(ServerInfo info) {
+    public void linkDeny(ServerConnectionContext ctx) {
         assert !isLeader();
-        removeFromPotentialSiblings(info);
+        ctx.readyToClose();
     }
 
-    public void endFusion() {
+    public void endFusion(ServerInfo info) {
+        if (!siblings.containsKey(info.servername())) return;
         awaitedFusionEnd--;
         if (awaitedFusionEnd <= 0) {
-            System.out.println("Whole fusion complete ; unlocking");
             unlock();
         }
     }

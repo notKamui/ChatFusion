@@ -95,11 +95,11 @@ public class ServerToServerFrameVisitor implements FrameVisitor {
 
     @Override
     public void visit(FusionLinkDeny frame) {
-        server.linkDeny(frame.info());
+        server.linkDeny(ctx);
     }
 
     @Override
     public void visit(FusionEnd frame) {
-        server.endFusion();
+        server.endFusion(frame.info());
     }
 }

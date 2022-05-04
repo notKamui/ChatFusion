@@ -59,7 +59,7 @@ public abstract class AbstractContext implements Context {
     @Override
     public void doRead() throws IOException {
         if (sc.read(bin) == -1) {
-            LOGGER.info("Connection closed by " + sc.getRemoteAddress());
+            System.out.println("Connection closed by " + sc.getRemoteAddress());
             closed = true;
         }
         processIn();

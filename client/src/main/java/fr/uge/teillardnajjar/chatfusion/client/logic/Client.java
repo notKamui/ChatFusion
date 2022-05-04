@@ -66,6 +66,7 @@ public class Client {
             try {
                 selector.select(this::treatKey);
                 processCommands();
+                if (!sc.isConnected()) Thread.currentThread().interrupt();
             } catch (UncheckedIOException tunneled) {
                 silentlyClose();
                 throw tunneled.getCause();
