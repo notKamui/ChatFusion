@@ -28,15 +28,12 @@ public final class ClientContext extends AbstractContext implements Context {
     private final FilesManager filesManager;
     private final Set<FileSender> fileSenders = new HashSet<>();
 
-
-
     public ClientContext(SelectionKey key, Client client) {
         super(key);
         Objects.requireNonNull(client);
         this.client = client;
         this.setVisitor(new ClientFrameVisitor(client, this));
         this.filesManager = new FilesManager(client);
-
     }
 
     private void queueLogin() {
@@ -80,7 +77,7 @@ public final class ClientContext extends AbstractContext implements Context {
         try {
             var sender = FileSender.from(cmd);
             fileSenders.add(sender);
-            sender.sendFile(this);
+            sender.sendAsync(this);
         } catch (IOException | UncheckedIOException e) {
             LOGGER.warning("Error while sending file");
         }

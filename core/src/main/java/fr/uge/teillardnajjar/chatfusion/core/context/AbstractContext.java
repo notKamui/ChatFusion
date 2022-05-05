@@ -22,14 +22,10 @@ public abstract class AbstractContext implements Context {
     protected final ByteBuffer bin;
     protected final ByteBuffer bout;
     protected final ArrayDeque<ByteBuffer> queue;
-    protected final ArrayDeque<ByteBuffer> filesQueue;
     private final FrameReader reader;
     private FrameVisitor visitor;
 
     protected boolean closed = false;
-
-    protected final static int MSG_PRIORITY = 3;
-    private int sentMessages;
 
     public AbstractContext(SelectionKey key) {
         Objects.requireNonNull(key);
@@ -38,9 +34,7 @@ public abstract class AbstractContext implements Context {
         this.bin = ByteBuffer.allocate(BUFFER_SIZE);
         this.bout = ByteBuffer.allocate(BUFFER_SIZE);
         this.queue = new ArrayDeque<>();
-        this.filesQueue = new ArrayDeque<>();
         this.reader = new FrameReader();
-        this.sentMessages = 0;
     }
 
     protected void setVisitor(FrameVisitor visitor) {
@@ -98,49 +92,14 @@ public abstract class AbstractContext implements Context {
         }
     }
 
-    protected void sendMSGPacket() {
-
-    }
-
     protected void processOut() {
-
-        while ((!queue.isEmpty() || !filesQueue.isEmpty()) && bout.hasRemaining()) {
-            if (queue.isEmpty()) {
-                var buffer = filesQueue.peek();
-                if (!buffer.hasRemaining()) {
-                    filesQueue.poll();
-                    continue;
-                }
-                Readers.read(buffer, bout);
-                sentMessages = 0;
+        while (!queue.isEmpty() && bout.hasRemaining()) {
+            var buffer = queue.peek();
+            if (!buffer.hasRemaining()) {
+                queue.poll();
+                continue;
             }
-            else if (filesQueue.isEmpty()) {
-                var buffer = queue.peek();
-                if (!buffer.hasRemaining()) {
-                    queue.poll();
-                    continue;
-                }
-                Readers.read(buffer, bout);
-                sentMessages++;
-            }
-            else if (sentMessages < MSG_PRIORITY) {
-                var buffer = queue.peek();
-                if (!buffer.hasRemaining()) {
-                    queue.poll();
-                    continue;
-                }
-                Readers.read(buffer, bout);
-                sentMessages++;
-            }
-            else {
-                var buffer = filesQueue.peek();
-                if (!buffer.hasRemaining()) {
-                    filesQueue.poll();
-                    continue;
-                }
-                Readers.read(buffer, bout);
-                sentMessages = 0;
-            }
+            Readers.read(buffer, bout);
         }
     }
 
@@ -168,14 +127,6 @@ public abstract class AbstractContext implements Context {
             queue.offer(buffer);
             processOut();
             updateInterestOps();
-        }
-    }
-
-
-
-    public void fillFileQueue(ByteBuffer fileBuffer) {
-        synchronized (filesQueue) {
-            filesQueue.offer(fileBuffer);
         }
     }
 }
