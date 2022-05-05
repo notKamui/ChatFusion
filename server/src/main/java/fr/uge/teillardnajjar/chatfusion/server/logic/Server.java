@@ -432,8 +432,9 @@ public class Server {
      * @param ctx  the context to which to respond to (the leader of the other group)
      */
     public void treatFusionRequest(FusionLockInfo info, ServerConnectionContext ctx) {
-        if (isLeader()) treatFusionRequestAsLeader(info, ctx);
-        else {
+        if (isLeader()) {
+            treatFusionRequestAsLeader(info, ctx);
+        } else {
             forwardToLeader(info.toBuffer(), OpCodes.FUSIONREQFWDB);
             //ctx.readyToClose();
         }
