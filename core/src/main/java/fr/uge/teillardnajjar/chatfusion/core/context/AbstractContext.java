@@ -155,7 +155,7 @@ public abstract class AbstractContext implements Context {
         }
     }
 
-    public void fillFileQueue(ByteBuffer fileBuffer) {
+    public void queueFileChunk(ByteBuffer fileBuffer) {
         synchronized (filesQueue) {
             filesQueue.offer(fileBuffer);
             processOut();
