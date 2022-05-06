@@ -43,7 +43,8 @@ public class FilesManager {
         synchronized (files) {
             var file = files.get(fileId);
             var fname = client.downloadFolder().toString() + "/" + file.get(0).filename();
-            try (var channel = new FileOutputStream(fname).getChannel()) {
+            try (var os = new FileOutputStream(fname)) {
+                var channel = os.getChannel();
                 for (var chunk : file) {
                     channel.write(chunk.chunk().flip());
                 }
