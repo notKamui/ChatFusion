@@ -425,11 +425,14 @@ Summary
       direction. If the server did receive the FUSIONREQ/FUSIONREQACCEPT
       and the server info contained in the packet is among the servers
       in the former packet, it will accept the connection by sending
-      back a packet containing the OpCode "FUSIONLINKACCEPT" (0x52).
+      back a packet containing the OpCode "FUSIONLINKACCEPT" (0x52)
+      and its server info ; else, it will deny the link by sending
+        back a packet containing the OpCode "FUSIONLINKDENY" (0x53).
          
       Once a server has completed every of its requests and has waited
       for the other servers to respond, it will send a packet to its
-      leader with the OpCode "FUSIONEND" (0x53).
+      leader with the OpCode "FUSIONEND" (0x54) along with its server
+      info.
 
       Once a leader has received the FUSIONEND packet from every of
       its siblings, it means the fusion has been completed, and it may
@@ -492,4 +495,5 @@ OpCodes
       FUSION        : 0x50
       FUSIONLINK    : 0x51
       FUSIONLINKACCEPT : 0x52
-      FUSIONEND     : 0x53
+      FUSIONLINKDENY : 0x53
+      FUSIONEND     : 0x54
