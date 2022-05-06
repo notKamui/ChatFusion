@@ -6,7 +6,6 @@ import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
@@ -53,7 +52,7 @@ public class FileSender {
         return new FileSender(cmd.targetUsername(), cmd.targetServername(), cmd.path());
     }
 
-    public void sendAsync(ClientContext ctx) {
+    /*public void sendAsync(ClientContext ctx) {
         sender = new Thread(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
@@ -71,9 +70,27 @@ public class FileSender {
                 }
             }
             ctx.finishSender(this);
-        });
-        sender.setDaemon(true);
+       n });
+        sender.setDaemo(true);
         sender.start();
+    }*/
+
+    public void sendFile(ClientContext ctx) throws IOException {
+        while (!Thread.currentThread().isInterrupted()) {
+            chunk.clear();
+            var read = file.read(chunk);
+            if (read == -1) {
+                break;
+            }
+            header.flip();
+            chunk.flip();
+            if (read < BUFFER_SIZE) {
+                chunk.limit(read);
+            }
+            var buffer = ByteBuffer.allocate(header.remaining() + Integer.BYTES + chunk.remaining());
+            buffer.put(header).putInt(read).put(chunk).flip();
+            ctx.fillFileQueue(buffer);
+        }
     }
 
     public void cancel() {
