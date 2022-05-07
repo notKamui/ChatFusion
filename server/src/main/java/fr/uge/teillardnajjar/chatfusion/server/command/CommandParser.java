@@ -6,8 +6,9 @@ public class CommandParser {
 
     public static Optional<Command> parse(String command) {
         return switch (command.toUpperCase()) {
+            case "TOGGLE DEBUG" -> Optional.of(new ToggleDebugCommand());
             case "SHUTDOWN" -> Optional.of(new Shutdown());
-            case "SHUTDOWNNOW" -> Optional.of(new ShutdownNow());
+            case "SHUTDOWN NOW" -> Optional.of(new ShutdownNow());
             case "INFO" -> Optional.of(new InfoCommand());
             default -> {
                 if (command.toUpperCase().startsWith("FUSION")) {

@@ -24,7 +24,8 @@ public final class OpCodes {
     public static final byte FUSION = 0x50;
     public static final byte FUSIONLINK = 0x51;
     public static final byte FUSIONLINKACCEPT = 0x52;
-    public static final byte FUSIONEND = 0x53;
+    public static final byte FUSIONLINKDENY = 0x53;
+    public static final byte FUSIONEND = 0x54;
 
     private OpCodes() {
         throw new AssertionError("No instance");

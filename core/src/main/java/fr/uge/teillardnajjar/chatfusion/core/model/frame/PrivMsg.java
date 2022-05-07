@@ -1,6 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.core.model.frame;
 
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedMessage;
 
 public record PrivMsg(IdentifiedMessage message) implements Frame {
     @Override

@@ -7,7 +7,7 @@ import fr.uge.teillardnajjar.chatfusion.client.file.FileSender;
 import fr.uge.teillardnajjar.chatfusion.client.file.FilesManager;
 import fr.uge.teillardnajjar.chatfusion.core.context.AbstractContext;
 import fr.uge.teillardnajjar.chatfusion.core.context.Context;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
 import fr.uge.teillardnajjar.chatfusion.core.opcode.OpCodes;
 
 import java.io.IOException;
@@ -16,9 +16,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 public final class ClientContext extends AbstractContext implements Context {
     private final static Charset ASCII = StandardCharsets.US_ASCII;
@@ -26,7 +24,6 @@ public final class ClientContext extends AbstractContext implements Context {
 
     private final Client client;
     private final FilesManager filesManager;
-    private final Set<FileSender> fileSenders = new HashSet<>();
 
     public ClientContext(SelectionKey key, Client client) {
         super(key);
@@ -75,25 +72,14 @@ public final class ClientContext extends AbstractContext implements Context {
 
     public void queuePrivateFile(PrivateFileCommand cmd) {
         try {
-            var sender = FileSender.from(cmd);
-            fileSenders.add(sender);
-            sender.sendAsync(this);
+            FileSender.from(cmd).sendFile(this);
         } catch (IOException | UncheckedIOException e) {
             LOGGER.warning("Error while sending file");
         }
     }
 
-    public void finishSender(FileSender sender) {
-        fileSenders.remove(sender);
-        client.wakeup();
-    }
-
     public void exit() {
         silentlyClose();
-        fileSenders.forEach(sender -> {
-            sender.cancel();
-            finishSender(sender);
-        });
         Thread.currentThread().interrupt();
     }
 
@@ -106,7 +92,8 @@ public final class ClientContext extends AbstractContext implements Context {
             LOGGER.warning("Selector lied");
             return;
         }
-        key.interestOps(SelectionKey.OP_WRITE);
+        setConnected(true);
         queueLogin();
+        updateInterestOps();
     }
 }

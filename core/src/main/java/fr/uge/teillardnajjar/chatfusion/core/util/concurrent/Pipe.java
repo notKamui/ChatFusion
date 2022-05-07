@@ -16,9 +16,9 @@ public class Pipe<T> {
     private final ArrayDeque<T> pipe = new ArrayDeque<>();
 
     public void in(T content) {
+        Objects.requireNonNull(content);
         lock.lock();
         try {
-            Objects.requireNonNull(content);
             pipe.offer(content);
         } finally {
             lock.unlock();

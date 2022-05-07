@@ -1,6 +1,8 @@
 package fr.uge.teillardnajjar.chatfusion.core.model.frame;
 
-public record FusionEnd() implements Frame {
+import fr.uge.teillardnajjar.chatfusion.core.model.part.ServerInfo;
+
+public record FusionEnd(ServerInfo info) implements Frame {
     @Override
     public void accept(FrameVisitor visitor) {
         visitor.visit(this);

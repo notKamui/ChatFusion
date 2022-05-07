@@ -9,7 +9,7 @@ allprojects {
     apply(plugin = "java")
 
     group = "fr.uge.teillardnajjar"
-    version = "0.1.0"
+    version = "0.2.0"
 
     repositories {
         mavenCentral()
@@ -45,9 +45,10 @@ fun Project.jarConfig(mainClassFQName: String) {
         manifest {
             attributes["Main-Class"] = mainClassFQName
         }
-        configurations["compileClasspath"].forEach { file ->
+        configurations.compileClasspath.get().files.forEach { file ->
             from(zipTree(file.absoluteFile))
         }
+        destinationDirectory.set(rootProject.file("executables"))
     }
 
 }

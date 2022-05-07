@@ -10,6 +10,10 @@ public class Application {
             System.out.println("Usage: java -jar ChatFusion-server.jar <port> <name>");
             System.exit(1);
         }
+        if (args[1].length() != 5) {
+            System.out.println("The server name must be exactly 5 ascii characters long");
+            System.exit(1);
+        }
         new Server(Integer.parseInt(args[0]), args[1]).launch();
     }
 }

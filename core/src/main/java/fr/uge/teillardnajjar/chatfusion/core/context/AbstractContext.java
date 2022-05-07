@@ -10,36 +10,48 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
-import java.util.Objects;
 import java.util.logging.Logger;
+
+import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractContext implements Context {
 
     protected final static Logger LOGGER = Logger.getLogger(AbstractContext.class.getName());
     private final static int BUFFER_SIZE = 32_768;
-    public final SelectionKey key;
+    protected final SelectionKey key;
     protected final SocketChannel sc;
     protected final ByteBuffer bin;
     protected final ByteBuffer bout;
     protected final ArrayDeque<ByteBuffer> queue;
+    protected final ArrayDeque<ByteBuffer> filesQueue;
     private final FrameReader reader;
-    private FrameVisitor visitor;
+    protected FrameVisitor visitor;
 
+    protected boolean connected = false;
     protected boolean closed = false;
 
+    private final static int CONSECUTIVE_MSG_LIMIT = 3;
+    private int sentMessages;
+
     public AbstractContext(SelectionKey key) {
-        Objects.requireNonNull(key);
+        requireNonNull(key);
         this.key = key;
         this.sc = (SocketChannel) key.channel();
         this.bin = ByteBuffer.allocate(BUFFER_SIZE);
         this.bout = ByteBuffer.allocate(BUFFER_SIZE);
         this.queue = new ArrayDeque<>();
+        this.filesQueue = new ArrayDeque<>();
         this.reader = new FrameReader();
+        this.sentMessages = 0;
     }
 
     protected void setVisitor(FrameVisitor visitor) {
-        Objects.requireNonNull(visitor);
+        requireNonNull(visitor);
         this.visitor = visitor;
+    }
+
+    public void setConnected(boolean connected) {
+        this.connected = connected;
     }
 
     @Override
@@ -54,7 +66,7 @@ public abstract class AbstractContext implements Context {
     @Override
     public void doRead() throws IOException {
         if (sc.read(bin) == -1) {
-            LOGGER.info("Connection closed by " + sc.getRemoteAddress());
+            System.out.println("Connection closed by " + sc.getRemoteAddress());
             closed = true;
         }
         processIn();
@@ -63,7 +75,13 @@ public abstract class AbstractContext implements Context {
 
     @Override
     public void updateInterestOps() {
+        if (!connected) {
+            key.interestOps(SelectionKey.OP_CONNECT);
+            return;
+        }
+
         int interestOps = 0;
+
         if (!closed && bin.hasRemaining()) {
             interestOps |= SelectionKey.OP_READ;
         }
@@ -91,20 +109,28 @@ public abstract class AbstractContext implements Context {
         }
     }
 
+    private void processQueue(ArrayDeque<ByteBuffer> queue, Runnable onFinish) {
+        var buffer = queue.peek();
+        assert buffer != null;
+        if (!buffer.hasRemaining()) {
+            queue.poll();
+            return;
+        }
+        Readers.read(buffer, bout);
+        onFinish.run();
+    }
+
     protected void processOut() {
-        while (!queue.isEmpty() && bout.hasRemaining()) {
-            var buffer = queue.peek();
-            if (!buffer.hasRemaining()) {
-                queue.poll();
-                continue;
-            }
-            Readers.read(buffer, bout);
+        while ((!queue.isEmpty() || !filesQueue.isEmpty()) && bout.hasRemaining()) {
+            if (queue.isEmpty()) processQueue(filesQueue, () -> sentMessages = 0);
+            else if (filesQueue.isEmpty() || sentMessages < CONSECUTIVE_MSG_LIMIT) processQueue(queue, () -> sentMessages++);
+            else processQueue(filesQueue, () -> sentMessages = 0);
         }
     }
 
     protected void processIn() {
         if (visitor == null) throw new AssertionError();
-        while (bin.hasRemaining()) {
+        while (true) {
             var state = reader.process(bin);
             switch (state) {
                 case ERROR:
@@ -114,8 +140,8 @@ public abstract class AbstractContext implements Context {
                     return;
                 case DONE:
                     var frame = reader.get();
-                    frame.accept(visitor);
                     reader.reset();
+                    frame.accept(visitor);
                     break;
             }
         }
@@ -124,6 +150,14 @@ public abstract class AbstractContext implements Context {
     public void queuePacket(ByteBuffer buffer) {
         synchronized (queue) {
             queue.offer(buffer);
+            processOut();
+            updateInterestOps();
+        }
+    }
+
+    public void queueFileChunk(ByteBuffer fileBuffer) {
+        synchronized (filesQueue) {
+            filesQueue.offer(fileBuffer);
             processOut();
             updateInterestOps();
         }

@@ -1,6 +1,6 @@
 package fr.uge.teillardnajjar.chatfusion.core.model.frame;
 
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.ForwardedIdentifiedMessage;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.ForwardedIdentifiedMessage;
 
 public record PrivMsgFwd(ForwardedIdentifiedMessage message) implements Frame {
     @Override

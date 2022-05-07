@@ -1,11 +1,16 @@
 package fr.uge.teillardnajjar.chatfusion.client.file;
 
 import fr.uge.teillardnajjar.chatfusion.client.logic.Client;
-import fr.uge.teillardnajjar.chatfusion.core.model.parts.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.model.part.IdentifiedFileChunk;
+import fr.uge.teillardnajjar.chatfusion.core.util.Pair;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,7 +22,9 @@ public class FilesManager {
     private final static Logger LOGGER = Logger.getLogger(FilesManager.class.getName());
 
     private final Client client;
-    private final Map<Integer, List<IdentifiedFileChunk>> files = new HashMap<>();
+
+    // id -> (stream, totalWritten)
+    private final Map<Integer, Pair<FileOutputStream, Long>> files = new HashMap<>();
 
     public FilesManager(Client client) {
         Objects.requireNonNull(client);
@@ -26,35 +33,28 @@ public class FilesManager {
 
     public void feedChunk(IdentifiedFileChunk chunk) {
         var fileId = chunk.fileId();
-        long size;
-        synchronized (files) {
-            var chunks = files.computeIfAbsent(fileId, __ -> new ArrayList<>());
-            chunks.add(chunk);
-            size = chunks.stream().mapToLong(c -> c.chunk().capacity()).sum();
-        }
-        if (size == chunk.fileSize()) {
-            var writer = new Thread(() -> writeFile(fileId));
-            writer.setDaemon(true);
-            writer.start();
-        }
-    }
-
-    private void writeFile(int fileId) {
-        synchronized (files) {
-            var file = files.get(fileId);
-            var fname = client.downloadFolder().toString() + "/" + file.get(0).filename();
-            try (var channel = new FileOutputStream(fname).getChannel()) {
-                for (var chunk : file) {
-                    channel.write(chunk.chunk().flip());
+        var fname = client.downloadFolder().toString() + "/" + chunk.filename();
+        var fnametmp = fname + ".tmp";
+        try {
+            var file = files.computeIfAbsent(fileId, __ -> {
+                try {
+                    return Pair.of(new FileOutputStream(fnametmp), 0L);
+                } catch (FileNotFoundException e) {
+                    throw new UncheckedIOException(e);
                 }
-                client.logMessage(file.get(0));
-            } catch (FileNotFoundException e) {
-                LOGGER.warning("File not found: " + fname);
-            } catch (IOException e) {
-                LOGGER.warning("Error while writing file : " + fname);
-            } finally {
+            });
+            var os = file.first();
+            var written = os.getChannel().write(chunk.chunk().flip());
+            var totalWritten = file.second() + written;
+            files.put(fileId, Pair.of(os, totalWritten));
+            if (totalWritten == chunk.fileSize()) {
+                client.logMessage(chunk);
+                os.close();
                 files.remove(fileId);
+                Files.move(Path.of(fnametmp), Path.of(fname));
             }
+        } catch (UncheckedIOException | IOException e) {
+            LOGGER.warning("Error while writing file : " + fnametmp + " : " + e.getMessage());
         }
     }
 }
