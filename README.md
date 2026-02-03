@@ -5,7 +5,7 @@ University project.
 
 ## What is ChatFusion?
 
-ChatFusion is a protocol, a client, and a server at the same type. The protocol itself and its specification is defined
+ChatFusion is a protocol, a client, and a server. The protocol itself and its specification is defined
 in the [ChatFusion Protocol Specification (RFC)](RFC_CFP.txt).
 
 Basically, the protocol is a simple text-based chat protocol that also allows servers to fuse to make networks of
@@ -47,5 +47,5 @@ on this server, the connection will be refused.
 
 ## Authors
 
-* [Jimmy "notKamui" Teillard](https://git.notkamui.com/)
+* [Jimmy "notKamui" Teillard](https://github.com/notkamui)
 * [Hadi Najjar](https://github.com/hadinajjar)
